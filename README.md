@@ -72,4 +72,4 @@ Hello world!
 
 #### 4 Enjoy!
 
-You can download the test project [here](https://github.com/radianteam/framework-test "Radian Framework Test Project").
+You can download the example project [here](https://github.com/radianteam/framework-example "Radian Framework Example Project").
