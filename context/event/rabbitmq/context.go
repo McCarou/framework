@@ -56,6 +56,29 @@ func (c *ContextRabbitMq) Get() interface{} {
 	return nil
 }
 
+func (c *ContextRabbitMq) DeclareExchange(name string, type_ string, durable bool) error {
+
+	if c.connection.IsClosed() {
+		err := c.Setup()
+
+		if err != nil {
+			return err
+		}
+	}
+
+	err := c.channel.ExchangeDeclare(
+		name,    // name
+		type_,   // type
+		durable, // durable
+		false,   // auto-deleted
+		false,   // internal
+		false,   // no-wait
+		nil,     // arguments
+	)
+
+	return err
+}
+
 func (c *ContextRabbitMq) PublishExchange(exchange string, routing_key string, message []byte) error {
 
 	if c.connection.IsClosed() {
