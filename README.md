@@ -17,14 +17,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/radianteam/framework"
-	"github.com/radianteam/framework/context/repository/sqlx"
+	sqlx "github.com/radianteam/framework/adapter/storage/sqlx"
 	"github.com/radianteam/framework/worker"
-	"github.com/radianteam/framework/worker/service/rest"
+	rest "github.com/radianteam/framework/worker/service/rest"
 )
 
 // REST handler function
-func handler_main(c *gin.Context, wc *worker.WorkerContexts) {
-	// extract the database context
+func handler_main(c *gin.Context, wc *worker.WorkerAdapters) {
+	// extract the database adapter
 	_, err := wc.Get("db")
 
 	if err != nil {
@@ -32,7 +32,7 @@ func handler_main(c *gin.Context, wc *worker.WorkerContexts) {
 		return
 	}
 
-	// use the contexts and whatever you want
+	// use the adapters and whatever you want
 
 	// return standard gin results
 	c.String(http.StatusOK, "Hello world!\n")
@@ -43,20 +43,21 @@ func main() {
 	radian := framework.NewRadianFramework()
 
 	// create a new REST worker
-	worker_config := &worker.WorkerConfig{ListenHost: "0.0.0.0", Port: 8088}
-	worker_rest := rest.NewServiceRest(worker_config)
+	worker_config := &rest.RestConfig{Listen: "0.0.0.0", Port: 8088}
+	worker_rest := rest.NewRestServiceWorker("service_rest", worker_config)
 
-	// create a database context
-	worker_context := sqlx.NewContextSqlx("sqlite3", "db.sqlite")
+	// create a database adapter
+	db_config := &sqlx.SqlxConfig{Driver: "sqlite3", ConnectionString: "db.sqlite"}
+	db_adapter := sqlx.NewSqlxAdapter("db", db_config)
 
-	//add the context to the worker
-	worker_rest.AddContext("db", worker_context)
+	//add the adapter to the worker
+	worker_rest.SetAdapter(db_adapter)
 
 	// create a route to the worker
 	worker_rest.SetRoute("GET", "/", handler_main)
 
 	// append worker to the framework
-	radian.AddWorker("service_rest", worker_rest)
+	radian.AddWorker(worker_rest)
 
 	// run the worker
 	radian.Run([]string{"service_rest"})
