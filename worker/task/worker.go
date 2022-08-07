@@ -1,4 +1,4 @@
-package task
+package taskworker
 
 import (
 	"context"
@@ -11,10 +11,12 @@ import (
 type TaskType int8
 
 const (
-	TASK_TYPE_FIXED_DELAY TaskType = iota
-	TASK_TYPE_DELAY
-	TASK_TYPE_CRON
+	TaskTypeFixedDelay TaskType = iota
+	TaskTypeDelay
+	TaskTypeCron
 )
+
+type HandleFuncTaskScheduler func(ctx context.Context, wc *worker.WorkerAdapters) error
 
 type Task struct {
 	Type TaskType
@@ -23,33 +25,35 @@ type Task struct {
 	CronStr string
 
 	Executor *chrono.Task
-	Handler  func(ctx context.Context, wc *worker.WorkerContexts) error
+	Handler  HandleFuncTaskScheduler
 }
 
+const WorkerTaskSchedule string = "_worker_task_schedule"
+
 type TaskSchedule struct {
-	*worker.WorkerBase
+	*worker.BaseWorker
 
 	scheduler chrono.TaskScheduler
 
-	wait_chan chan bool
+	waitChan chan bool
 
 	tasks []Task
 }
 
-func NewTaskSchedule() *TaskSchedule {
-	return &TaskSchedule{WorkerBase: worker.NewWorkerBase(nil)}
+func NewTaskSchedule(name string) *TaskSchedule {
+	return &TaskSchedule{BaseWorker: worker.NewBaseWorker(name)}
 }
 
-func (w *TaskSchedule) AddDelayTask(delay time.Duration, handler func(ctx context.Context, wc *worker.WorkerContexts) error) {
-	w.tasks = append(w.tasks, Task{Type: TASK_TYPE_DELAY, Delay: delay, Handler: handler})
+func (w *TaskSchedule) AddDelayTask(delay time.Duration, handler func(ctx context.Context, wc *worker.WorkerAdapters) error) {
+	w.tasks = append(w.tasks, Task{Type: TaskTypeDelay, Delay: delay, Handler: handler})
 }
 
-func (w *TaskSchedule) AddFixedDelayTask(delay time.Duration, handler func(ctx context.Context, wc *worker.WorkerContexts) error) {
-	w.tasks = append(w.tasks, Task{Type: TASK_TYPE_FIXED_DELAY, Delay: delay, Handler: handler})
+func (w *TaskSchedule) AddFixedDelayTask(delay time.Duration, handler func(ctx context.Context, wc *worker.WorkerAdapters) error) {
+	w.tasks = append(w.tasks, Task{Type: TaskTypeFixedDelay, Delay: delay, Handler: handler})
 }
 
-func (w *TaskSchedule) AddCronTask(cron_str string, handler func(ctx context.Context, wc *worker.WorkerContexts) error) {
-	w.tasks = append(w.tasks, Task{Type: TASK_TYPE_CRON, CronStr: cron_str, Handler: handler})
+func (w *TaskSchedule) AddCronTask(cronStr string, handler func(ctx context.Context, wc *worker.WorkerAdapters) error) {
+	w.tasks = append(w.tasks, Task{Type: TaskTypeCron, CronStr: cronStr, Handler: handler})
 }
 
 func (w *TaskSchedule) Setup() {
@@ -62,28 +66,28 @@ func (w *TaskSchedule) Run() {
 	w.Logger.Info("Running Task scheduler")
 
 	for _, task := range w.tasks {
-		task_scope := task
+		taskScope := task
 
 		handler := func(ctx context.Context) {
-			err := task_scope.Handler(ctx, w.Contexts)
+			err := taskScope.Handler(ctx, w.Adapters)
 
 			if err != nil {
 				w.Logger.Errorf("Task has been completed with error: %v", err)
 			}
 		}
 
-		if task.Type == TASK_TYPE_FIXED_DELAY {
-			w.scheduler.ScheduleWithFixedDelay(handler, task_scope.Delay)
-		} else if task.Type == TASK_TYPE_DELAY {
-			w.scheduler.ScheduleAtFixedRate(handler, task_scope.Delay)
-		} else if task.Type == TASK_TYPE_CRON {
-			w.scheduler.ScheduleWithCron(handler, task_scope.CronStr)
+		if task.Type == TaskTypeFixedDelay {
+			w.scheduler.ScheduleWithFixedDelay(handler, taskScope.Delay)
+		} else if task.Type == TaskTypeDelay {
+			w.scheduler.ScheduleAtFixedRate(handler, taskScope.Delay)
+		} else if task.Type == TaskTypeCron {
+			w.scheduler.ScheduleWithCron(handler, taskScope.CronStr)
 		}
 	}
 
-	w.wait_chan = make(chan bool)
+	w.waitChan = make(chan bool)
 
-	<-w.wait_chan
+	<-w.waitChan
 
 	w.Logger.Info("Stopping Task Scheduler")
 
@@ -95,5 +99,5 @@ func (w *TaskSchedule) Run() {
 func (w *TaskSchedule) Stop() {
 	w.Logger.Info("stop signal received! Graceful shutting down")
 
-	close(w.wait_chan)
+	close(w.waitChan)
 }

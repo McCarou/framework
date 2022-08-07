@@ -1,4 +1,6 @@
-package rabbitmq
+package eventworker
+
+// TODO: refactor to rabbitmq adapter
 
 import (
 	"fmt"
@@ -9,74 +11,79 @@ import (
 	"github.com/streadway/amqp"
 )
 
-type EventRabbitMq struct {
-	*worker.WorkerBase
+type RabbitMqEventWorkerRegFunc func(d *amqp.Delivery, wc *worker.WorkerAdapters) error
+
+type RabbitMqConfig struct {
+	Host          string   `json:"host,omitempty" config:"host,required"`
+	Port          int16    `json:"port,omitempty" config:"port,required"`
+	Username      string   `json:"username,omitempty" config:"username,required"`
+	Password      string   `json:"password,omitempty" config:"password,required"`
+	Exchange      string   `json:"exchange,omitempty" config:"exchange"`
+	Listen        []string `json:"listen,omitempty" config:"listen"`
+	PrefetchCount int      `json:"prefetch_count,omitempty" config:"prefetch_count"`
+}
+
+type RabbitMqEventWorker struct {
+	*worker.BaseWorker
+
+	config *RabbitMqConfig
 
 	connection *amqp.Connection
 	channel    *amqp.Channel
 
-	mutex     sync.Mutex
-	wait_chan chan bool
+	mutex    sync.Mutex
+	waitChan chan bool
 
-	handlers map[string]map[string]func(d *amqp.Delivery, wc *worker.WorkerContexts) error
+	handlers map[string]map[string]RabbitMqEventWorkerRegFunc
 }
 
-func NewEventRabbitMq(config *worker.WorkerConfig) *EventRabbitMq {
-	handlers := make(map[string]map[string]func(d *amqp.Delivery, wc *worker.WorkerContexts) error)
-	return &EventRabbitMq{WorkerBase: worker.NewWorkerBase(config), handlers: handlers}
+func NewRabbitMqEventWorker(name string, config *RabbitMqConfig) *RabbitMqEventWorker {
+	handlers := make(map[string]map[string]RabbitMqEventWorkerRegFunc)
+	return &RabbitMqEventWorker{BaseWorker: worker.NewBaseWorker(name), config: config, handlers: handlers}
 }
 
-func (w *EventRabbitMq) SetEvent(queue string, routing_key string, handler func(d *amqp.Delivery, wc *worker.WorkerContexts) error) {
-	_, ok := w.handlers[queue]
-
-	if !ok {
-		w.handlers[queue] = (make(map[string]func(d *amqp.Delivery, wc *worker.WorkerContexts) error))
+func (w *RabbitMqEventWorker) SetEvent(queue string, routingKey string, handler RabbitMqEventWorkerRegFunc) {
+	if _, ok := w.handlers[queue]; !ok {
+		w.handlers[queue] = make(map[string]RabbitMqEventWorkerRegFunc)
 	}
 
-	w.handlers[queue][routing_key] = handler
+	w.handlers[queue][routingKey] = handler
 }
 
-func (w *EventRabbitMq) Setup() {
+func (w *RabbitMqEventWorker) Setup() {
 	w.Logger.Info("Setting up RabbitMq Events")
 }
 
-func (w *EventRabbitMq) Run() {
+func (w *RabbitMqEventWorker) Run() {
 	w.Logger.Info("Running RabbitMq Events")
 
 	var err error = nil
-	w.connection, err = amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%d/", w.Config.Login, w.Config.Password, w.Config.Host, w.Config.Port))
+	w.connection, err = amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%d/", w.config.Username, w.config.Password, w.config.Host, w.config.Port))
 
 	if err != nil {
 		w.Logger.Fatalf("dial %s\n", err)
 	}
 
-	w.channel, err = w.connection.Channel()
-
-	if err != nil {
+	if w.channel, err = w.connection.Channel(); err != nil {
 		w.Logger.Fatalf("channel create %s\n", err)
 	}
 
-	w.channel.Qos(1, 0, false)
+	err = w.channel.Qos(int(w.config.PrefetchCount), 0, false) // TODO: hardcode
+	if err != nil {
+		w.Logger.Fatalf("Cannot prepare qos - %s\n", err)
+	}
 
 	wg := sync.WaitGroup{}
 
-	for queue_name, routing_keys := range w.handlers {
+	for queueName, routingKeys := range w.handlers {
 		wg.Add(1)
 
-		go func(name string, handlers map[string]func(d *amqp.Delivery, wc *worker.WorkerContexts) error) {
+		go func(name string, handlers map[string]RabbitMqEventWorkerRegFunc) {
 			defer wg.Done()
 
 			w.Logger.Infof("Consuming queue %s", name)
 
-			msgs, err := w.channel.Consume(
-				name,  // queue
-				name,  // consumer
-				false, // auto-ack
-				false, // exclusive
-				false, // no-local
-				false, // no-wait
-				nil,   // args
-			)
+			msgs, err := w.channel.Consume(name, w.GetName(), false, false, false, false, nil) // TODO: hardcoded values
 
 			if err != nil {
 				w.Logger.Fatalf("Consuming queue %s started with error %v", name, err)
@@ -99,7 +106,7 @@ func (w *EventRabbitMq) Run() {
 
 				//single thread processing. contexts can be none thread safe!
 				w.mutex.Lock()
-				err = handler(&message, w.Contexts)
+				err = handler(&message, w.Adapters)
 				w.mutex.Unlock()
 
 				if err != nil {
@@ -113,17 +120,17 @@ func (w *EventRabbitMq) Run() {
 			}
 
 			w.Logger.Infof("Consuming queue %s stopped", name)
-		}(queue_name, routing_keys)
+		}(queueName, routingKeys)
 	}
 
-	w.wait_chan = make(chan bool)
+	w.waitChan = make(chan bool)
 
-	<-w.wait_chan
+	<-w.waitChan
 
 	w.Logger.Info("Stopping RabbitMq Events")
 
-	for queue_name := range w.handlers {
-		w.channel.Cancel(queue_name, false)
+	for queueName := range w.handlers {
+		w.channel.Cancel(queueName, false)
 	}
 
 	w.channel.Close()
@@ -132,8 +139,8 @@ func (w *EventRabbitMq) Run() {
 	wg.Wait()
 }
 
-func (w *EventRabbitMq) Stop() {
+func (w *RabbitMqEventWorker) Stop() {
 	w.Logger.Info("stop signal received! Graceful shutting down")
 
-	close(w.wait_chan)
+	close(w.waitChan)
 }

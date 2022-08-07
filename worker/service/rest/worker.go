@@ -1,4 +1,4 @@
-package rest
+package serviceworker
 
 import (
 	"context"
@@ -15,38 +15,43 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ServiceRest struct {
-	*worker.WorkerBase
+type RegFuncRestServiceWorker func(c *gin.Context, wc *worker.WorkerAdapters)
 
+type RestConfig struct {
+	Listen string `json:"listen,omitempty" config:"listen,required"`
+	Port   int16  `json:"port,omitempty" config:"port,required"`
+}
+
+type RestServiceWorker struct {
+	*worker.BaseWorker
+
+	config *RestConfig
+
+	routes *gin.Engine
 	server *http.Server
-
-	routes map[string]map[string]func(c *gin.Context, wc *worker.WorkerContexts)
 }
 
-func NewServiceRest(config *worker.WorkerConfig) *ServiceRest {
-	routes := make(map[string]map[string]func(c *gin.Context, wc *worker.WorkerContexts))
-	return &ServiceRest{WorkerBase: worker.NewWorkerBase(config), routes: routes}
-}
-
-func (w *ServiceRest) SetRoute(method string, path string, handler func(c *gin.Context, wc *worker.WorkerContexts)) {
-	_, ok := w.routes[strings.ToUpper(method)]
-
-	if !ok {
-		w.routes[strings.ToUpper(method)] = (make(map[string]func(c *gin.Context, wc *worker.WorkerContexts)))
-	}
-
-	w.routes[strings.ToUpper(method)][path] = handler
-}
-
-func (w *ServiceRest) Setup() {
-	w.Logger.Infof("Setting up REST Service")
-
+func NewRestServiceWorker(name string, config *RestConfig) *RestServiceWorker {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = ioutil.Discard
 
-	router := gin.Default()
+	return &RestServiceWorker{
+		BaseWorker: worker.NewBaseWorker(name),
+		config:     config,
+		routes:     gin.Default(),
+	}
+}
 
-	router.Use(func(c *gin.Context) {
+func (w *RestServiceWorker) SetRoute(method string, path string, handler RegFuncRestServiceWorker) {
+	w.routes.Handle(strings.ToUpper(method), path, func(c *gin.Context) {
+		handler(c, w.Adapters)
+	})
+}
+
+func (w *RestServiceWorker) Setup() {
+	w.Logger.Infof("Setting up REST Service")
+
+	w.routes.Use(func(c *gin.Context) {
 		start := time.Now()
 		c.Next()
 		duration := GetDurationInMillseconds(start)
@@ -66,61 +71,13 @@ func (w *ServiceRest) Setup() {
 		}
 	})
 
-	if paths, ok := w.routes["GET"]; ok {
-		for path, handler := range paths {
-			router.GET(path, func(c *gin.Context) {
-				handler(c, w.Contexts)
-			})
-		}
-	}
-
-	if paths, ok := w.routes["POST"]; ok {
-		for path, handler := range paths {
-			router.POST(path, func(c *gin.Context) {
-				handler(c, w.Contexts)
-			})
-		}
-	}
-
-	if paths, ok := w.routes["PUT"]; ok {
-		for path, handler := range paths {
-			router.PUT(path, func(c *gin.Context) {
-				handler(c, w.Contexts)
-			})
-		}
-	}
-
-	if paths, ok := w.routes["PATCH"]; ok {
-		for path, handler := range paths {
-			router.PATCH(path, func(c *gin.Context) {
-				handler(c, w.Contexts)
-			})
-		}
-	}
-
-	if paths, ok := w.routes["DELETE"]; ok {
-		for path, handler := range paths {
-			router.DELETE(path, func(c *gin.Context) {
-				handler(c, w.Contexts)
-			})
-		}
-	}
-
-	if paths, ok := w.routes["OPTIONS"]; ok {
-		for path, handler := range paths {
-			router.OPTIONS(path, func(c *gin.Context) {
-				handler(c, w.Contexts)
-			})
-		}
-	}
-
 	w.server = &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", w.Config.ListenHost, w.Config.Port),
-		Handler: router,
+		Addr:    fmt.Sprintf("%s:%d", w.config.Listen, w.config.Port),
+		Handler: w.routes,
 	}
 }
 
-func (w *ServiceRest) Run() {
+func (w *RestServiceWorker) Run() {
 	w.Logger.Infof("Running REST Service")
 
 	if err := w.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -128,7 +85,7 @@ func (w *ServiceRest) Run() {
 	}
 }
 
-func (w *ServiceRest) Stop() {
+func (w *RestServiceWorker) Stop() {
 	w.Logger.Infof("stop signal received! Graceful shutting down")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

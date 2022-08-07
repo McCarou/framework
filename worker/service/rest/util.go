@@ -1,4 +1,4 @@
-package rest
+package serviceworker
 
 import (
 	"strings"
@@ -7,22 +7,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetClientIP(c *gin.Context) string {
-	requester := c.Request.Header.Get("X-Forwarded-For")
+func GetClientIP(c *gin.Context) (clientIP string) {
+	clientIP = c.Request.Header.Get("X-Forwarded-For")
 
-	if len(requester) == 0 {
-		requester = c.Request.Header.Get("X-Real-IP")
+	if len(clientIP) == 0 {
+		clientIP = c.Request.Header.Get("X-Real-IP")
 	}
 
-	if len(requester) == 0 {
-		requester = c.Request.RemoteAddr
+	if len(clientIP) == 0 {
+		clientIP = c.Request.RemoteAddr
 	}
 
-	if strings.Contains(requester, ",") {
-		requester = strings.Split(requester, ",")[0]
+	if strings.Contains(clientIP, ",") {
+		clientIP = strings.Split(clientIP, ",")[0]
 	}
 
-	return requester
+	return
 }
 
 func GetDurationInMillseconds(start time.Time) float64 {

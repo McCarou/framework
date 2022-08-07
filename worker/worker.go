@@ -1,61 +1,60 @@
 package worker
 
 import (
-	"github.com/radianteam/framework/context"
+	"github.com/radianteam/framework/adapter"
 	"github.com/sirupsen/logrus"
 )
 
 type WorkerInterface interface {
+	GetName() string
 	SetName(string)
-	SetupContexts() error
-	CloseContexts() error
+	SetAdapter(adapter.AdapterInterface)
+	SetupAdapters() error
+	CloseAdapters() error
 	Setup()
 	Run()
 	Stop()
 }
 
-type WorkerConfig struct {
-	ListenHost string
-	Host       string
-	Port       int16
-	Login      string
-	Password   string
-	Threads    int8
+type BaseWorker struct {
+	name     string
+	Logger   *logrus.Entry
+	Adapters *WorkerAdapters
 }
 
-type WorkerBase struct {
-	Config *WorkerConfig
-	Name   string
+func NewBaseWorker(name string) *BaseWorker {
+	if name == "" {
+		name = "default"
+	}
 
-	Logger *logrus.Entry
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.JSONFormatter{})
 
-	Contexts *WorkerContexts
+	return &BaseWorker{
+		name:     name,
+		Logger:   logger.WithField("worker", name),
+		Adapters: NewWorkerAdapters(),
+	}
 }
 
-func NewWorkerBase(config *WorkerConfig) *WorkerBase {
-	return &WorkerBase{Config: config, Contexts: NewWorkerContexts()}
+func (w *BaseWorker) GetName() string {
+	return w.name
 }
-
-func (w *WorkerBase) SetConfig(config *WorkerConfig) {
-	w.Config = config
-}
-
-func (w *WorkerBase) SetName(name string) {
+func (w *BaseWorker) SetName(name string) {
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
 	w.Logger = logger.WithField("worker", name)
 
-	w.Name = name
+	w.name = name
 }
 
-func (w *WorkerBase) AddContext(name string, ctx context.ContextInterface) {
-	w.Contexts.AddContext(name, ctx)
+func (w *BaseWorker) SetAdapter(adap adapter.AdapterInterface) {
+	w.Adapters.SetAdapter(adap)
 }
 
-func (w *WorkerBase) SetupContexts() error {
-	return w.Contexts.SetupContexts()
+func (w *BaseWorker) SetupAdapters() error {
+	return w.Adapters.SetupAdapters()
 }
-
-func (w *WorkerBase) CloseContexts() error {
-	return w.Contexts.CloseContexts()
+func (w *BaseWorker) CloseAdapters() error {
+	return w.Adapters.CloseAdapters()
 }

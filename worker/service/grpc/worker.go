@@ -1,8 +1,10 @@
-package grpc
+package serviceworker
 
 import (
 	"fmt"
 	"net"
+
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -11,49 +13,78 @@ import (
 	"google.golang.org/grpc"
 )
 
-type ServiceGrpc struct {
-	*worker.WorkerBase
+type RegFuncGrpcServiceWorker func(s *grpc.Server, wc *worker.WorkerAdapters)
+
+type GrpcConfig struct {
+	Listen string `json:"listen,omitempty" config:"listen,required"`
+	Port   int16  `json:"port,omitempty" config:"port,required"`
+}
+
+type GrpcServiceWorker struct {
+	*worker.BaseWorker
 
 	grpcServer *grpc.Server
 
-	services []func(s *grpc.Server, wc *worker.WorkerContexts)
+	config *GrpcConfig
+
+	regFuncs     []RegFuncGrpcServiceWorker
+	errorHandler grpc_recovery.RecoveryHandlerFuncContext
 }
 
-func NewServiceGrpc(config *worker.WorkerConfig) *ServiceGrpc {
-	return &ServiceGrpc{WorkerBase: worker.NewWorkerBase(config)}
+func NewGrpcServiceWorker(name string, config *GrpcConfig) *GrpcServiceWorker {
+	return &GrpcServiceWorker{
+		BaseWorker: worker.NewBaseWorker(name),
+		config:     config,
+	}
 }
 
-func (w *ServiceGrpc) AddService(f func(s *grpc.Server, wc *worker.WorkerContexts)) {
-	w.services = append(w.services, f)
+func (w *GrpcServiceWorker) AddRegFunc(f RegFuncGrpcServiceWorker) {
+	w.regFuncs = append(w.regFuncs, f)
 }
 
-func (w *ServiceGrpc) Setup() {
+func (w *GrpcServiceWorker) SetErrorHandler(f grpc_recovery.RecoveryHandlerFuncContext) {
+	w.errorHandler = f
+}
+
+func (w *GrpcServiceWorker) Setup() {
 	w.Logger.Infof("Setting up GRPC Service")
 
 	opts := []grpc_logrus.Option{}
 
 	grpc_logrus.ReplaceGrpcLogger(w.Logger)
 
+	unaryInters := []grpc.UnaryServerInterceptor{
+		grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+		grpc_logrus.UnaryServerInterceptor(w.Logger, opts...),
+	}
+
+	if w.errorHandler == nil {
+		unaryInters = append(unaryInters, grpc_recovery.UnaryServerInterceptor([]grpc_recovery.Option{grpc_recovery.WithRecoveryHandlerContext(w.errorHandler)}...))
+	}
+
+	streamInters := []grpc.StreamServerInterceptor{
+		grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+		grpc_logrus.StreamServerInterceptor(w.Logger, opts...),
+	}
+
+	if w.errorHandler == nil {
+		streamInters = append(streamInters, grpc_recovery.StreamServerInterceptor([]grpc_recovery.Option{grpc_recovery.WithRecoveryHandlerContext(w.errorHandler)}...))
+	}
+
 	w.grpcServer = grpc.NewServer(
-		grpc_middleware.WithUnaryServerChain(
-			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_logrus.UnaryServerInterceptor(w.Logger, opts...),
-		),
-		grpc_middleware.WithStreamServerChain(
-			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_logrus.StreamServerInterceptor(w.Logger, opts...),
-		),
+		grpc_middleware.WithUnaryServerChain(unaryInters...),
+		grpc_middleware.WithStreamServerChain(streamInters...),
 	)
 
-	for _, element := range w.services {
-		element(w.grpcServer, w.Contexts)
+	for _, regFunc := range w.regFuncs {
+		regFunc(w.grpcServer, w.Adapters)
 	}
 }
 
-func (w *ServiceGrpc) Run() {
+func (w *GrpcServiceWorker) Run() {
 	w.Logger.Infof("Running GRPC Service")
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", w.Config.ListenHost, w.Config.Port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", w.config.Listen, w.config.Port))
 	if err != nil {
 		w.Logger.Fatalf("failed to listen: %v", err)
 	}
@@ -61,8 +92,8 @@ func (w *ServiceGrpc) Run() {
 	w.grpcServer.Serve(lis)
 }
 
-func (w *ServiceGrpc) Stop() {
-	w.Logger.Infof("stop signal received! Graceful shutting down")
+func (w *GrpcServiceWorker) Stop() {
+	w.Logger.Infof("Stop signal received! Graceful shutting down")
 
 	w.grpcServer.GracefulStop()
 }

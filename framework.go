@@ -1,12 +1,10 @@
 package framework
 
-//TODO: healthchecks
-
-//TODO: worker rabbitmq reconnect
-
-//TODO: context email
-
-//TODO: tests
+// TODO: healthchecks
+// TODO: worker rabbitmq reconnect
+// TODO: context email
+// TODO: tests
+// TODO: make workers for periodic, permanent, pretask and posttask
 
 import (
 	"os"
@@ -19,68 +17,77 @@ import (
 	"github.com/radianteam/framework/worker"
 )
 
+type WorkersMap map[string]worker.WorkerInterface
+
 type RadianFramework struct {
-	workers map[string]worker.WorkerInterface
+	workers WorkersMap
+	logger  *logrus.Entry
 }
 
 func NewRadianFramework() *RadianFramework {
-	m := make(map[string]worker.WorkerInterface)
-	return &RadianFramework{workers: m}
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.JSONFormatter{})
+
+	w := make(WorkersMap)
+
+	return &RadianFramework{
+		workers: w,
+		logger:  logger.WithField("worker", "framework"),
+	}
 }
 
-func (r *RadianFramework) AddWorker(name string, worker worker.WorkerInterface) {
-	worker.SetName(name)
-	r.workers[name] = worker
+func (r *RadianFramework) AddWorker(w worker.WorkerInterface) {
+	if r.workers == nil {
+		r.workers = make(WorkersMap)
+	}
+
+	r.workers[w.GetName()] = w
 }
 
 func (r *RadianFramework) Run(services []string) {
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 
-	log_struct := logrus.New()
-	log_struct.SetFormatter(&logrus.JSONFormatter{})
-	logger := log_struct.WithField("worker", "framework")
-
-	logger.Info("running")
+	r.logger.Info("running")
 
 	// check service names
-	for _, item := range services {
-		if _, ok := r.workers[item]; !ok {
-			logger.Fatal("worker with name %s is not found", item)
+	for _, serviceName := range services {
+		if _, ok := r.workers[serviceName]; !ok {
+			r.logger.Fatalf("worker with name %s is not found", serviceName)
 		}
 	}
 
 	// run services
 	wg := sync.WaitGroup{}
 
-	for _, item := range services {
+	for _, serviceName := range services {
 		wg.Add(1)
 
 		go func(name string) {
 			defer wg.Done()
 
-			logger.Infof("worker %s: setting up contexts", name)
-			err := r.workers[name].SetupContexts()
+			r.logger.Infof("worker %s: setting up adapters", name)
+			err := r.workers[name].SetupAdapters()
 
 			if err != nil {
-				logger.Fatalf("worker %s: context init error %v", name, err)
+				r.logger.Fatalf("worker %s: adapter init error %v", name, err)
 			}
 
-			logger.Infof("worker %s: setting up worker", name)
+			r.logger.Infof("worker %s: setting up worker", name)
 			r.workers[name].Setup()
 
-			logger.Infof("worker %s: running", name)
+			r.logger.Infof("worker %s: running", name)
 			r.workers[name].Run()
 
-			logger.Infof("worker %s: stopping", name)
-			logger.Infof("worker %s: deleting contexts", name)
-			err = r.workers[name].CloseContexts()
+			r.logger.Infof("worker %s: stopping", name)
+			r.logger.Infof("worker %s: deleting adapters", name)
+			err = r.workers[name].CloseAdapters()
 
 			if err != nil {
-				logger.Fatalf("worker %s: context close error %v", name, err)
+				r.logger.Fatalf("worker %s: adapter close error %v", name, err)
 			}
 
-			logger.Infof("worker %s: stopped", name)
-		}(item)
+			r.logger.Infof("worker %s: stopped", name)
+		}(serviceName)
 	}
 
 	done := make(chan os.Signal, 1)
@@ -88,13 +95,13 @@ func (r *RadianFramework) Run(services []string) {
 
 	<-done
 
-	logger.Info("stopping workers")
+	r.logger.Info("stopping workers")
 
-	for _, item := range services {
-		r.workers[item].Stop()
+	for _, serviceName := range services {
+		r.workers[serviceName].Stop()
 	}
 
 	wg.Wait()
 
-	logger.Info("stopped")
+	r.logger.Info("stopped")
 }
