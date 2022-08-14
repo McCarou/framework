@@ -1,7 +1,8 @@
-package rmqa
+package rabbitmq
 
 import (
 	"fmt"
+
 	"github.com/radianteam/framework/adapter"
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
@@ -16,7 +17,7 @@ type RabbitMqConfig struct {
 	Listen   []string `json:"listen,omitempty" config:"listen"`
 }
 
-type AdapterRabbitMq struct {
+type RabbitMqAdapter struct {
 	*adapter.BaseAdapter
 
 	config *RabbitMqConfig
@@ -25,11 +26,11 @@ type AdapterRabbitMq struct {
 	channel    *amqp.Channel
 }
 
-func NewAdapterRabbitMq(name string, config *RabbitMqConfig) *AdapterRabbitMq {
-	return &AdapterRabbitMq{BaseAdapter: adapter.NewBaseAdapter(name), config: config}
+func NewRabbitMqAdapter(name string, config *RabbitMqConfig) *RabbitMqAdapter {
+	return &RabbitMqAdapter{BaseAdapter: adapter.NewBaseAdapter(name), config: config}
 }
 
-func (a *AdapterRabbitMq) Setup() (err error) {
+func (a *RabbitMqAdapter) Setup() (err error) {
 	connStr := ""
 	if a.config.Username != "" {
 		connStr += a.config.Username
@@ -56,7 +57,8 @@ func (a *AdapterRabbitMq) Setup() (err error) {
 
 	return a.channel.Qos(1, 0, false)
 }
-func (a *AdapterRabbitMq) Close() (err error) {
+
+func (a *RabbitMqAdapter) Close() (err error) {
 	if err = a.channel.Close(); err != nil {
 		logrus.WithField("adapter", a.GetName()).Error(err)
 		return
@@ -65,7 +67,7 @@ func (a *AdapterRabbitMq) Close() (err error) {
 	return a.connection.Close()
 }
 
-func (a *AdapterRabbitMq) checkConnection() (err error) {
+func (a *RabbitMqAdapter) checkConnection() (err error) {
 	if !a.connection.IsClosed() {
 		return
 	}
@@ -73,7 +75,7 @@ func (a *AdapterRabbitMq) checkConnection() (err error) {
 	return a.Setup()
 }
 
-func (a *AdapterRabbitMq) DeclareExchange(name string, kind string, durable bool) (err error) {
+func (a *RabbitMqAdapter) DeclareExchange(name string, kind string, durable bool) (err error) {
 	if err = a.checkConnection(); err != nil {
 		return
 	}
@@ -81,7 +83,7 @@ func (a *AdapterRabbitMq) DeclareExchange(name string, kind string, durable bool
 	return a.channel.ExchangeDeclare(name, kind, durable, false, false, false, nil)
 }
 
-func (a *AdapterRabbitMq) PublishExchange(exchange string, key string, message []byte) (err error) {
+func (a *RabbitMqAdapter) PublishExchange(exchange string, key string, message []byte) (err error) {
 	if err = a.checkConnection(); err != nil {
 		return
 	}
@@ -89,7 +91,7 @@ func (a *AdapterRabbitMq) PublishExchange(exchange string, key string, message [
 	return a.channel.Publish(exchange, key, false, false, amqp.Publishing{Body: message})
 }
 
-func (a *AdapterRabbitMq) Publish(key string, message []byte) (err error) {
+func (a *RabbitMqAdapter) Publish(key string, message []byte) (err error) {
 	if err = a.checkConnection(); err != nil {
 		return
 	}

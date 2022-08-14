@@ -1,7 +1,8 @@
-package adapter
+package mongodb
 
 import (
 	"context"
+
 	"github.com/radianteam/framework/adapter"
 	"github.com/sirupsen/logrus"
 

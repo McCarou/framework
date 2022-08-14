@@ -1,7 +1,8 @@
-package adapter
+package arangodb
 
 import (
 	"context"
+
 	"github.com/radianteam/framework/adapter"
 	"github.com/sirupsen/logrus"
 
@@ -55,9 +56,11 @@ func (a *ArangoDbAdapter) Setup() (err error) {
 	}
 	return
 }
+
 func (a *ArangoDbAdapter) Close() error {
 	return nil
 }
+
 func (a *ArangoDbAdapter) Get() driver.Database {
 	return a.database
 }

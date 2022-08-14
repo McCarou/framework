@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"golang.org/x/exp/slices"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
 	"syscall"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/maps"
@@ -20,19 +21,19 @@ const DefaultConfigEnvPrefix string = "RADIAN"
 const DefaultTagConfigName = "config"
 const DefaultTagConfigRequiredName = "required"
 
-type AdapterConfig struct {
+type ConfigAdapter struct {
 	config map[string]any
 }
 
-func NewAdapterConfig() *AdapterConfig {
-	return &AdapterConfig{config: make(map[string]any)}
+func NewConfigAdapter() *ConfigAdapter {
+	return &ConfigAdapter{config: make(map[string]any)}
 }
 
-func (a *AdapterConfig) LoadFromJson(cfgStr []byte) error {
+func (a *ConfigAdapter) LoadFromJson(cfgStr []byte) error {
 	return json.Unmarshal(cfgStr, &a.config)
 }
 
-func (a *AdapterConfig) LoadFromFileJson(filePath string) error {
+func (a *ConfigAdapter) LoadFromFileJson(filePath string) error {
 	if strings.TrimSpace(filePath) == "" {
 		filePath = DefaultJsonConfigPath
 	}
@@ -56,11 +57,11 @@ func (a *AdapterConfig) LoadFromFileJson(filePath string) error {
 	return err
 }
 
-func (a *AdapterConfig) LoadFromEnv(prefix string) error {
+func (a *ConfigAdapter) LoadFromEnv(prefix string) error {
 	return a.loadMap(syscall.Environ(), prefix, "=", "_")
 }
 
-func (a *AdapterConfig) LoadFromArgs(prefix string) error {
+func (a *ConfigAdapter) LoadFromArgs(prefix string) error {
 	if len(os.Args) < 2 {
 		return nil
 	}
@@ -70,7 +71,7 @@ func (a *AdapterConfig) LoadFromArgs(prefix string) error {
 	return a.loadMap(args, prefix, "=", "-")
 }
 
-func (a *AdapterConfig) loadMap(data []string, prefix, delimKeyValue, delimParams string) error {
+func (a *ConfigAdapter) loadMap(data []string, prefix, delimKeyValue, delimParams string) error {
 	for _, arg := range data {
 		if !strings.HasPrefix(arg, prefix) {
 			continue
@@ -88,8 +89,8 @@ func (a *AdapterConfig) loadMap(data []string, prefix, delimKeyValue, delimParam
 	return nil
 }
 
-func (a *AdapterConfig) GetAdapter(path []string) (*AdapterConfig, error) {
-	ac := NewAdapterConfig()
+func (a *ConfigAdapter) GetAdapter(path []string) (*ConfigAdapter, error) {
+	ac := NewConfigAdapter()
 
 	m, err := a.GetValue(path)
 	if err != nil {
@@ -105,7 +106,7 @@ func (a *AdapterConfig) GetAdapter(path []string) (*AdapterConfig, error) {
 	return ac, nil
 }
 
-func (a *AdapterConfig) GetValue(path []string) (any, error) {
+func (a *ConfigAdapter) GetValue(path []string) (any, error) {
 	if len(path) == 0 {
 		return a.config, nil
 	}
@@ -137,7 +138,7 @@ func (a *AdapterConfig) GetValue(path []string) (any, error) {
 	return result, nil
 }
 
-func (a *AdapterConfig) SetValue(path []string, val any) error {
+func (a *ConfigAdapter) SetValue(path []string, val any) error {
 	if len(path) == 0 {
 		return nil
 	}
@@ -165,11 +166,11 @@ func (a *AdapterConfig) SetValue(path []string, val any) error {
 	return nil
 }
 
-func (a *AdapterConfig) Unmarshal(v interface{}) error {
+func (a *ConfigAdapter) Unmarshal(v interface{}) error {
 	return a.unmarshalFromMap(a.config, v)
 }
 
-func (a *AdapterConfig) UnmarshalPath(path []string, v interface{}) error {
+func (a *ConfigAdapter) UnmarshalPath(path []string, v interface{}) error {
 	m, err := a.GetValue(path)
 	if err != nil {
 		return err
@@ -182,7 +183,7 @@ func (a *AdapterConfig) UnmarshalPath(path []string, v interface{}) error {
 	return a.unmarshalFromMap(m.(map[string]any), v)
 }
 
-func (a *AdapterConfig) unmarshalFromMap(m map[string]any, v interface{}) error {
+func (a *ConfigAdapter) unmarshalFromMap(m map[string]any, v interface{}) error {
 	if m == nil {
 		return errors.New("empty config")
 	}

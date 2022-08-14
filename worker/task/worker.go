@@ -1,4 +1,4 @@
-package taskworker
+package task
 
 import (
 	"context"

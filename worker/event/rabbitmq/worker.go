@@ -1,4 +1,4 @@
-package eventworker
+package rabbitmq
 
 // TODO: refactor to rabbitmq adapter
 

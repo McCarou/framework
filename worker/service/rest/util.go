@@ -1,4 +1,4 @@
-package serviceworker
+package rest
 
 import (
 	"strings"
