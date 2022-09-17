@@ -2,6 +2,10 @@ package mongodb
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"os"
+	"strings"
 
 	"github.com/radianteam/framework/adapter"
 	"github.com/sirupsen/logrus"
@@ -16,6 +20,8 @@ type MongoDbConfig struct {
 	Password         string   `json:"password,omitempty" config:"password"`
 	ReplicaSet       string   `json:"replica_set,omitempty" config:"replica_set"`
 	DirectConnection bool     `json:"direct_connection,omitempty" config:"direct_connection"`
+	RootCA           string   `json:"root_ca,omitempty" config:"root_ca"`
+	AuthSource       string   `json:"auth_source,omitempty" config:"auth_source"`
 }
 
 type MongoDbAdapter struct {
@@ -32,14 +38,33 @@ func NewMongoDbAdapter(name string, config *MongoDbConfig) *MongoDbAdapter {
 
 func (a *MongoDbAdapter) Setup() (err error) {
 	mongoOpt := options.Client()
+
 	mongoOpt.SetHosts(a.config.Hosts)
-	mongoOpt.SetAuth(options.Credential{Username: a.config.Username, Password: a.config.Password})
-	mongoOpt.SetReplicaSet(a.config.ReplicaSet)
+
+	if strings.TrimSpace(a.config.Username) != "" || strings.TrimSpace(a.config.Password) != "" {
+		mongoOpt.SetAuth(options.Credential{Username: a.config.Username, Password: a.config.Password, AuthSource: a.config.AuthSource})
+	}
+
+	if strings.TrimSpace(a.config.ReplicaSet) != "" {
+		mongoOpt.SetReplicaSet(a.config.ReplicaSet)
+	}
+
 	mongoOpt.SetDirect(a.config.DirectConnection)
 
-	// TODO: implement tls connection
+	if strings.TrimSpace(a.config.RootCA) != "" {
+		rootCerts := x509.NewCertPool()
+
+		if ca, err := os.ReadFile(a.config.RootCA); err == nil {
+			rootCerts.AppendCertsFromPEM(ca)
+		} else {
+			return err
+		}
+
+		mongoOpt.SetTLSConfig(&tls.Config{RootCAs: rootCerts})
+	}
 
 	a.client, err = mongo.Connect(context.TODO(), mongoOpt)
+
 	if err != nil {
 		logrus.WithField("adapter", a.GetName()).Error(err)
 	}

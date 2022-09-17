@@ -1,6 +1,6 @@
 module github.com/radianteam/framework
 
-go 1.18
+go 1.19
 
 require (
 	github.com/arangodb/go-driver v1.3.3
@@ -10,7 +10,7 @@ require (
 	github.com/lib/pq v1.2.0
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/procyon-projects/chrono v1.0.0
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.9.0
 	github.com/streadway/amqp v1.0.0
 	go.mongodb.org/mongo-driver v1.8.2
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
@@ -41,7 +41,7 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	golang.org/x/crypto v0.0.0-20201216223049-8b5274cf687f // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
+	golang.org/x/sys v0.0.0-20220915200043-7b5979e65e41 // indirect
 	golang.org/x/text v0.3.5 // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
