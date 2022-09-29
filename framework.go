@@ -19,11 +19,14 @@ import (
 
 type WorkersMap map[string]worker.WorkerInterface
 
+// Main framework structure that holds worker list and global logger.
 type RadianFramework struct {
 	workers WorkersMap
 	logger  *logrus.Entry
 }
 
+// Function allocates structure with global JSON logger and an empty
+// (but not nil!) worker list.
 func NewRadianFramework() *RadianFramework {
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
@@ -36,6 +39,9 @@ func NewRadianFramework() *RadianFramework {
 	}
 }
 
+// AddWorker registers a worker by name from Worker.GetName().
+// If the worker with the same name is already registred the
+// first one will be overwritten by the new one
 func (r *RadianFramework) AddWorker(w worker.WorkerInterface) {
 	if r.workers == nil {
 		r.workers = make(WorkersMap)
@@ -44,6 +50,8 @@ func (r *RadianFramework) AddWorker(w worker.WorkerInterface) {
 	r.workers[w.GetName()] = w
 }
 
+// Main framework loop. The loop setups adapters, captures the
+// thread and wait for SIGINT or SIGTERM signals.
 func (r *RadianFramework) Run(services []string) {
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 
