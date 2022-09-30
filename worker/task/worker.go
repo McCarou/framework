@@ -16,8 +16,11 @@ const (
 	TaskTypeCron
 )
 
+// Function template to handle tasks.
 type HandleFuncTaskScheduler func(ctx context.Context, wc *worker.WorkerAdapters) error
 
+// Structure contains information about chrono task
+// (not pretasks and posttasks!).
 type Task struct {
 	Type TaskType
 
@@ -30,6 +33,8 @@ type Task struct {
 
 const WorkerTaskSchedule string = "_worker_task_schedule"
 
+// Structure contains a task list and chrono scheduler
+// to control the tasks.
 type TaskSchedule struct {
 	*worker.BaseWorker
 
@@ -40,28 +45,37 @@ type TaskSchedule struct {
 	tasks []Task
 }
 
+// Function creates a new chrono task worker.
 func NewTaskSchedule(name string) *TaskSchedule {
 	return &TaskSchedule{BaseWorker: worker.NewBaseWorker(name)}
 }
 
+// Function adds a delay task. The task will be
+// executed after fixed duration AFTER completing previous execution.
 func (w *TaskSchedule) AddDelayTask(delay time.Duration, handler func(ctx context.Context, wc *worker.WorkerAdapters) error) {
 	w.tasks = append(w.tasks, Task{Type: TaskTypeDelay, Delay: delay, Handler: handler})
 }
 
+// Function adds a fixed delay task. The task will be
+// executed after fixed duration FROM previous execution start.
 func (w *TaskSchedule) AddFixedDelayTask(delay time.Duration, handler func(ctx context.Context, wc *worker.WorkerAdapters) error) {
 	w.tasks = append(w.tasks, Task{Type: TaskTypeFixedDelay, Delay: delay, Handler: handler})
 }
 
+// Function adds a fixed delay task. The task will be
+// executed by a cron schedule rule
 func (w *TaskSchedule) AddCronTask(cronStr string, handler func(ctx context.Context, wc *worker.WorkerAdapters) error) {
 	w.tasks = append(w.tasks, Task{Type: TaskTypeCron, CronStr: cronStr, Handler: handler})
 }
 
+// Internal function to execute during the framework starting
 func (w *TaskSchedule) Setup() {
 	w.Logger.Info("Setting up Task Scheduler")
 
 	w.scheduler = chrono.NewDefaultTaskScheduler()
 }
 
+// Internal function. Main loop used in framework loop as a separated thread
 func (w *TaskSchedule) Run() {
 	w.Logger.Info("Running Task scheduler")
 
@@ -96,6 +110,7 @@ func (w *TaskSchedule) Run() {
 	<-wait
 }
 
+// Internal function to execute during the framework stopping
 func (w *TaskSchedule) Stop() {
 	w.Logger.Info("stop signal received! Graceful shutting down")
 
