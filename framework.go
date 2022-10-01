@@ -4,9 +4,10 @@ package framework
 // TODO: worker rabbitmq reconnect
 // TODO: context email
 // TODO: tests
-// TODO: make workers for periodic, permanent, pretask and posttask
+// TODO: make workers for periodic, permanent, prejobs and postjobs
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"sync"
@@ -19,11 +20,12 @@ import (
 )
 
 type WorkersMap map[string]worker.WorkerInterface
+type JobsMap map[string]*job.TaskJob
 
 // Main framework structure that holds worker list and global logger.
 type RadianFramework struct {
-	preTasks  []*job.TaskJob
-	postTasks []*job.TaskJob
+	preJobs  JobsMap
+	postJobs JobsMap
 
 	workers WorkersMap
 	logger  *logrus.Entry
@@ -54,32 +56,40 @@ func (r *RadianFramework) AddWorker(w worker.WorkerInterface) {
 	r.workers[w.GetName()] = w
 }
 
-// AddPreTask registers a list of functions that will be executed
+// AddPreJob registers a list of functions that will be executed
 // before starting the main loop. Use it to get tokens, make
 // migrations, etc.
-func (r *RadianFramework) AddPreTask(t *job.TaskJob) {
-	r.preTasks = append(r.preTasks, t)
+func (r *RadianFramework) AddPreJob(t *job.TaskJob) {
+	if r.preJobs == nil {
+		r.preJobs = make(JobsMap)
+	}
+
+	r.preJobs[t.GetName()] = t
 }
 
-// AddPostTask registers a list of functions that will be executed
+// AddPostJob registers a list of functions that will be executed
 // after finishing the main loop. Use it to invalidate tokens, make
 // termination signals, etc.
-func (r *RadianFramework) AddPostTask(t *job.TaskJob) {
-	r.postTasks = append(r.postTasks, t)
+func (r *RadianFramework) AddPostJob(t *job.TaskJob) {
+	if r.postJobs == nil {
+		r.postJobs = make(JobsMap)
+	}
+
+	r.postJobs[t.GetName()] = t
 }
 
-// Main framework loop. The loop setups adapters, runs pretasks,
+// Main framework loop. The loop setups adapters, runs prejobs,
 // captures the, thread and wait for SIGINT or SIGTERM signals.
-// After termination runs posttasks and releases the thread.
-func (r *RadianFramework) Run(_preTasks []string, _workers []string, _postTasks []string) {
+// After termination runs postjobs and releases the thread.
+func (r *RadianFramework) Run(_preJobs []string, _workers []string, _postJobs []string) {
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 
 	r.logger.Info("running")
 
-	// check pretask names
-	for _, jobName := range _preTasks {
+	// check prejob names
+	for _, jobName := range _preJobs {
 		if _, ok := r.workers[jobName]; !ok {
-			r.logger.Fatalf("pretask with name %s is not found", jobName)
+			r.logger.Fatalf("prejob with name %s is not found", jobName)
 		}
 	}
 
@@ -90,14 +100,39 @@ func (r *RadianFramework) Run(_preTasks []string, _workers []string, _postTasks 
 		}
 	}
 
-	// check posttask names
-	for _, jobName := range _postTasks {
+	// check postjob names
+	for _, jobName := range _postJobs {
 		if _, ok := r.workers[jobName]; !ok {
-			r.logger.Fatalf("posttask with name %s is not found", jobName)
+			r.logger.Fatalf("postjob with name %s is not found", jobName)
 		}
 	}
 
-	// run pretasks
+	// TODO: run prejobs
+	for _, jobName := range _preJobs {
+		r.logger.Infof("prejob %s: setting up adapters", jobName)
+		err := r.preJobs[jobName].SetupAdapters()
+
+		if err != nil {
+			r.logger.Fatalf("prejob %s: adapter init error %v", jobName, err)
+		}
+
+		r.logger.Infof("prejob %s: running", jobName)
+		err = r.preJobs[jobName].Run(context.TODO())
+
+		if err != nil {
+			r.logger.Fatalf("prejob %s: job run error %v", jobName, err)
+		}
+
+		r.logger.Infof("prejob %s: stopping", jobName)
+		r.logger.Infof("prejob %s: deleting adapters", jobName)
+		err = r.preJobs[jobName].CloseAdapters()
+
+		if err != nil {
+			r.logger.Fatalf("prejob %s: adapter close error %v", jobName, err)
+		}
+
+		r.logger.Infof("prejob %s: completed", jobName)
+	}
 
 	// run workers
 	wg := sync.WaitGroup{}
@@ -145,6 +180,33 @@ func (r *RadianFramework) Run(_preTasks []string, _workers []string, _postTasks 
 	}
 
 	wg.Wait()
+
+	// TODO: run posttasks
+	for _, jobName := range _postJobs {
+		r.logger.Infof("postjob %s: setting up adapters", jobName)
+		err := r.postJobs[jobName].SetupAdapters()
+
+		if err != nil {
+			r.logger.Fatalf("postjob %s: adapter init error %v", jobName, err)
+		}
+
+		r.logger.Infof("postjob %s: running", jobName)
+		err = r.postJobs[jobName].Run(context.TODO())
+
+		if err != nil {
+			r.logger.Fatalf("postjob %s: job run error %v", jobName, err)
+		}
+
+		r.logger.Infof("postjob %s: stopping", jobName)
+		r.logger.Infof("postjob %s: deleting adapters", jobName)
+		err = r.postJobs[jobName].CloseAdapters()
+
+		if err != nil {
+			r.logger.Fatalf("postjob %s: adapter close error %v", jobName, err)
+		}
+
+		r.logger.Infof("postjob %s: completed", jobName)
+	}
 
 	r.logger.Info("stopped")
 }
