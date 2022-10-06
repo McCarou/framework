@@ -1,5 +1,7 @@
 package mongodb
 
+// TODO: load cert either from a file or from a config
+
 import (
 	"context"
 	"crypto/tls"
