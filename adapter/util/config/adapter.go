@@ -119,6 +119,26 @@ func (a *ConfigAdapter) GetValueOrDefault(path []string, defaultValue any) any {
 	return result
 }
 
+func (a *ConfigAdapter) GetStringOrDefault(path []string, defaultValue string) string {
+	result, err := a.GetString(path)
+
+	if err != nil {
+		return defaultValue
+	}
+
+	return result
+}
+
+func (a *ConfigAdapter) GetString(path []string) (string, error) {
+	result, err := a.GetValue(path)
+
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprint(result), nil
+}
+
 func (a *ConfigAdapter) GetValue(path []string) (any, error) {
 	if len(path) == 0 {
 		return a.config, nil
