@@ -78,10 +78,19 @@ func (r *RadianFramework) AddPostJob(t *job.TaskJob) {
 	r.postJobs[t.GetName()] = t
 }
 
-// Main framework loop. The loop setups adapters, runs prejobs,
-// captures the, thread and wait for SIGINT or SIGTERM signals.
-// After termination runs postjobs and releases the thread.
-func (r *RadianFramework) Run(_preJobs []string, _workers []string, _postJobs []string) {
+// Main framework loop. Left for backward compatibility. Doesn't
+// run jobs. Use RunWithJobs() instead of Run(). The loop setups
+// adapters, captures the thread and wait for SIGINT or SIGTERM
+// signals. After termination runs postjobs and releases the thread.
+func (r *RadianFramework) Run(_workers []string) {
+	r.RunWithJobs([]string{}, _workers, []string{})
+}
+
+// Main framework loop. Use this instead of Run(). The loop
+// setups adapters, runs prejobs, captures the thread and wait
+// for SIGINT or SIGTERM signals. After termination runs
+// postjobs and releases the thread.
+func (r *RadianFramework) RunWithJobs(_preJobs []string, _workers []string, _postJobs []string) {
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 
 	r.logger.Info("running")
