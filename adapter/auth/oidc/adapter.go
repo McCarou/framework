@@ -18,6 +18,7 @@ import (
 )
 
 type OidcConfig struct {
+	OfflineMode  bool     `json:"offline_mode,omitempty" config:"offline_mode"`
 	ProviderUrl  string   `json:"provider_url" config:"provider_url,required"`
 	ClientId     string   `json:"client_id" config:"client_id,required"`
 	ClientSecret string   `json:"client_secret" config:"client_secret"`
@@ -36,38 +37,32 @@ type OidcAdapter struct {
 }
 
 func NewOidcAdapter(name string, config *OidcConfig) *OidcAdapter {
-	return &OidcAdapter{BaseAdapter: adapter.NewBaseAdapter(name), config: config}
+	return &OidcAdapter{BaseAdapter: adapter.NewBaseAdapter(name), config: config, staticPublicKeys: &oidc.StaticKeySet{PublicKeys: []crypto.PublicKey{}}}
 }
 
 func (a *OidcAdapter) Setup() (err error) {
-	a.provider, err = oidc.NewProvider(context.TODO(), a.config.ProviderUrl)
-	if err != nil {
-		logrus.Errorf("cannot craete new provider - %s", err)
+	if !a.config.OfflineMode {
+		a.provider, err = oidc.NewProvider(context.TODO(), a.config.ProviderUrl)
+		if err != nil {
+			logrus.WithField("adapter", a.GetName()).Errorf("cannot craete new provider - %s", err)
+		}
 	}
 
 	if len(a.config.PublicKeys) > 0 {
-		a.staticPublicKeys = &oidc.StaticKeySet{PublicKeys: []crypto.PublicKey{}}
-
 		for _, pubPEM := range a.config.PublicKeys {
 			block, _ := pem.Decode([]byte(pubPEM))
 			if block == nil {
-				logrus.Errorf("failed to parse PEM block containing the public key")
+				logrus.WithField("adapter", a.GetName()).Errorf("failed to parse PEM block containing the public key")
 				continue
 			}
 
-			pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+			pub, err := x509.ParseCertificate(block.Bytes)
 			if err != nil {
-				logrus.Errorf("failed to parse DER encoded public key: %s", err)
+				logrus.WithField("adapter", a.GetName()).Errorf("failed to parse DER encoded public key: %s", err)
 				continue
 			}
 
-			switch pub := pub.(type) {
-			case crypto.PublicKey:
-				a.staticPublicKeys.PublicKeys = append(a.staticPublicKeys.PublicKeys, pub)
-			default:
-				logrus.Warnf("unknown type of public key")
-			}
-
+			a.staticPublicKeys.PublicKeys = append(a.staticPublicKeys.PublicKeys, pub.PublicKey)
 		}
 	}
 
@@ -80,20 +75,25 @@ func (a *OidcAdapter) Close() (err error) {
 }
 
 func (a *OidcAdapter) GetVerifier() *oidc.IDTokenVerifier {
-	if a.provider == nil {
+	if a.config.OfflineMode {
 		return oidc.NewVerifier(a.config.ProviderUrl, a.staticPublicKeys, &oidc.Config{ClientID: a.config.ClientId})
-	} else {
+	} else if a.provider != nil {
 		return a.provider.Verifier(&oidc.Config{ClientID: a.config.ClientId})
 	}
+	logrus.WithField("adapter", a.GetName()).Errorf("cannot get verifier - provider empty")
+	return nil
 }
 
 // Introspect - remote keycloak function is being called. Before the call, add client_id and client_secret in settings app.
 func (a *OidcAdapter) Introspect(token string) (err error) {
 	tokenURL := ""
-	if a.provider == nil {
-		tokenURL = a.config.ProviderUrl + "/token"
-	} else {
+	if a.config.OfflineMode {
+		tokenURL = a.config.ProviderUrl + "/protocol/openid-connect/token"
+	} else if a.provider != nil {
 		tokenURL = a.provider.Endpoint().TokenURL
+	} else {
+		logrus.WithField("adapter", a.GetName()).Errorf("cannot introspect token - empty provider or offline mode disable")
+		return errors.New("empty provider or offline mode disable")
 	}
 
 	requestData := make(url.Values)
@@ -104,7 +104,7 @@ func (a *OidcAdapter) Introspect(token string) (err error) {
 	client := &http.Client{}
 	res, err := client.PostForm(tokenURL+"/introspect", requestData)
 	if err != nil {
-		logrus.Errorf("cannot introspect token - %s", err)
+		logrus.WithField("adapter", a.GetName()).Errorf("cannot introspect token - %s", err)
 		return
 	}
 
@@ -112,20 +112,20 @@ func (a *OidcAdapter) Introspect(token string) (err error) {
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
-		logrus.Errorf("cannot introspect token - %s", res.Status)
+		logrus.WithField("adapter", a.GetName()).Errorf("cannot introspect token - %s", res.Status)
 		return errors.New(res.Status)
 	}
 
 	buf, err := io.ReadAll(res.Body)
 	if err != nil {
-		logrus.Errorf("cannot read response body - %s", err)
+		logrus.WithField("adapter", a.GetName()).Errorf("cannot read response body - %s", err)
 		return
 	}
 
 	tokenInfo := make(map[string]any)
 	err = json.Unmarshal(buf, &tokenInfo)
 	if err != nil {
-		logrus.Errorf("cannot unmarshal raw token data - %s", err)
+		logrus.WithField("adapter", a.GetName()).Errorf("cannot unmarshal raw token data - %s", err)
 		return
 	}
 
@@ -160,9 +160,16 @@ func (a *OidcAdapter) VerifyToken(token string) (err error) {
 }
 
 func (a *OidcAdapter) TokenInfo(token string) (tokenInfo *oidc.IDToken, err error) {
-	tokenInfo, err = a.GetVerifier().Verify(context.TODO(), token)
+	verifier := a.GetVerifier()
+	if verifier == nil {
+		err = errors.New("verifier is empty")
+		logrus.WithField("adapter", a.GetName()).Errorf("cannot get token info - %s", err)
+		return
+	}
+
+	tokenInfo, err = verifier.Verify(context.TODO(), token)
 	if err != nil {
-		logrus.Errorf("cannot get token info - %s", err)
+		logrus.WithField("adapter", a.GetName()).Errorf("cannot get token info - %s", err)
 	}
 	return
 }
