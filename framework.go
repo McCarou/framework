@@ -97,7 +97,7 @@ func (r *RadianFramework) RunWithJobs(_preJobs []string, _workers []string, _pos
 
 	// check prejob names
 	for _, jobName := range _preJobs {
-		if _, ok := r.workers[jobName]; !ok {
+		if _, ok := r.preJobs[jobName]; !ok {
 			r.logger.Fatalf("prejob with name %s is not found", jobName)
 		}
 	}
@@ -111,7 +111,7 @@ func (r *RadianFramework) RunWithJobs(_preJobs []string, _workers []string, _pos
 
 	// check postjob names
 	for _, jobName := range _postJobs {
-		if _, ok := r.workers[jobName]; !ok {
+		if _, ok := r.postJobs[jobName]; !ok {
 			r.logger.Fatalf("postjob with name %s is not found", jobName)
 		}
 	}
