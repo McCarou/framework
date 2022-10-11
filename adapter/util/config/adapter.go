@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
@@ -43,7 +42,7 @@ func (a *ConfigAdapter) LoadFromFileJson(filePath string) error {
 
 	cnf := make(map[string]any)
 
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		logrus.Warningf("Cannot read file %s - %s", filePath, err)
 		return err
