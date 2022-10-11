@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
@@ -12,6 +11,7 @@ import (
 
 	"golang.org/x/exp/slices"
 
+	"github.com/radianteam/framework/adapter"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/maps"
 )
@@ -22,11 +22,13 @@ const DefaultTagConfigName = "config"
 const DefaultTagConfigRequiredName = "required"
 
 type ConfigAdapter struct {
+	*adapter.BaseAdapter
+
 	config map[string]any
 }
 
-func NewConfigAdapter() *ConfigAdapter {
-	return &ConfigAdapter{config: make(map[string]any)}
+func NewConfigAdapter(name string) *ConfigAdapter {
+	return &ConfigAdapter{BaseAdapter: adapter.NewBaseAdapter(name), config: make(map[string]any)}
 }
 
 func (a *ConfigAdapter) LoadFromJson(cfgStr []byte) error {
@@ -40,7 +42,7 @@ func (a *ConfigAdapter) LoadFromFileJson(filePath string) error {
 
 	cnf := make(map[string]any)
 
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		logrus.Warningf("Cannot read file %s - %s", filePath, err)
 		return err
@@ -90,7 +92,7 @@ func (a *ConfigAdapter) loadMap(data []string, prefix, delimKeyValue, delimParam
 }
 
 func (a *ConfigAdapter) GetAdapter(path []string) (*ConfigAdapter, error) {
-	ac := NewConfigAdapter()
+	ac := NewConfigAdapter(a.GetName())
 
 	m, err := a.GetValue(path)
 	if err != nil {
@@ -104,6 +106,36 @@ func (a *ConfigAdapter) GetAdapter(path []string) (*ConfigAdapter, error) {
 	ac.config = maps.Clone(m.(map[string]any))
 
 	return ac, nil
+}
+
+func (a *ConfigAdapter) GetValueOrDefault(path []string, defaultValue any) any {
+	result, err := a.GetValue(path)
+
+	if err != nil {
+		return defaultValue
+	}
+
+	return result
+}
+
+func (a *ConfigAdapter) GetStringOrDefault(path []string, defaultValue string) string {
+	result, err := a.GetString(path)
+
+	if err != nil {
+		return defaultValue
+	}
+
+	return result
+}
+
+func (a *ConfigAdapter) GetString(path []string) (string, error) {
+	result, err := a.GetValue(path)
+
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprint(result), nil
 }
 
 func (a *ConfigAdapter) GetValue(path []string) (any, error) {
@@ -228,6 +260,18 @@ func (a *ConfigAdapter) unmarshalFromMap(m map[string]any, v interface{}) error 
 		} else {
 			return fmt.Errorf("field '%s' cannot be set", typeOfV.Field(i).Name)
 		}
+	}
+
+	return nil
+}
+
+func (a *ConfigAdapter) Setup() (err error) {
+	return nil
+}
+
+func (a *ConfigAdapter) Close() error {
+	for k := range a.config {
+		delete(a.config, k)
 	}
 
 	return nil
