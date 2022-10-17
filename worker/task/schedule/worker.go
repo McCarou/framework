@@ -1,4 +1,4 @@
-package task
+package schedule
 
 import (
 	"context"
@@ -17,7 +17,7 @@ const (
 )
 
 // Function template to handle tasks.
-type HandleFuncTaskScheduler func(ctx context.Context, wc *worker.WorkerAdapters) error
+type TaskScheduleHandleFunc func(ctx context.Context, wc *worker.WorkerAdapters) error
 
 // Structure contains information about chrono task
 // (not pretasks and posttasks!).
@@ -28,10 +28,8 @@ type Task struct {
 	CronStr string
 
 	Executor *chrono.Task
-	Handler  HandleFuncTaskScheduler
+	Handler  TaskScheduleHandleFunc
 }
-
-const WorkerTaskSchedule string = "_worker_task_schedule"
 
 // Structure contains a task list and chrono scheduler
 // to control the tasks.
@@ -52,19 +50,19 @@ func NewTaskSchedule(name string) *TaskSchedule {
 
 // Function adds a delay task. The task will be
 // executed after fixed duration AFTER completing previous execution.
-func (w *TaskSchedule) AddDelayTask(delay time.Duration, handler func(ctx context.Context, wc *worker.WorkerAdapters) error) {
+func (w *TaskSchedule) AddDelayTask(delay time.Duration, handler TaskScheduleHandleFunc) {
 	w.tasks = append(w.tasks, Task{Type: TaskTypeDelay, Delay: delay, Handler: handler})
 }
 
 // Function adds a fixed delay task. The task will be
 // executed after fixed duration FROM previous execution start.
-func (w *TaskSchedule) AddFixedDelayTask(delay time.Duration, handler func(ctx context.Context, wc *worker.WorkerAdapters) error) {
+func (w *TaskSchedule) AddFixedDelayTask(delay time.Duration, handler TaskScheduleHandleFunc) {
 	w.tasks = append(w.tasks, Task{Type: TaskTypeFixedDelay, Delay: delay, Handler: handler})
 }
 
 // Function adds a fixed delay task. The task will be
 // executed by a cron schedule rule
-func (w *TaskSchedule) AddCronTask(cronStr string, handler func(ctx context.Context, wc *worker.WorkerAdapters) error) {
+func (w *TaskSchedule) AddCronTask(cronStr string, handler TaskScheduleHandleFunc) {
 	w.tasks = append(w.tasks, Task{Type: TaskTypeCron, CronStr: cronStr, Handler: handler})
 }
 
