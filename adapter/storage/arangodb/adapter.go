@@ -2,6 +2,7 @@ package arangodb
 
 import (
 	"context"
+	"crypto/tls"
 
 	"github.com/radianteam/framework/adapter"
 	"github.com/sirupsen/logrus"
@@ -11,10 +12,11 @@ import (
 )
 
 type ArangoDbConfig struct {
-	Servers  []string `json:"servers,omitempty" config:"servers,required"`
-	Username string   `json:"username,omitempty" config:"username,required"`
-	Password string   `json:"password,omitempty" config:"password,required"`
-	Database string   `json:"database,omitempty" config:"database,required"`
+	Servers            []string `json:"servers,omitempty" config:"servers,required"`
+	Username           string   `json:"username,omitempty" config:"username,required"`
+	Password           string   `json:"password,omitempty" config:"password"`
+	Database           string   `json:"database,omitempty" config:"database,required"`
+	InsecureSkipVerify bool     `json:"insecure_skip_verify,omitempty" config:"insecure_skip_verify"`
 }
 
 type ArangoDbAdapter struct {
@@ -30,7 +32,13 @@ func NewArangoDbAdapter(name string, config *ArangoDbConfig) *ArangoDbAdapter {
 }
 
 func (a *ArangoDbAdapter) Setup() (err error) {
-	conn, err := http.NewConnection(http.ConnectionConfig{Endpoints: a.config.Servers})
+	connConfig := http.ConnectionConfig{Endpoints: a.config.Servers}
+
+	if a.config.InsecureSkipVerify {
+		connConfig.TLSConfig = &tls.Config{InsecureSkipVerify: a.config.InsecureSkipVerify}
+	}
+
+	conn, err := http.NewConnection(connConfig)
 	if err != nil {
 		logrus.WithField("adapter", a.GetName()).Error(err)
 		return
