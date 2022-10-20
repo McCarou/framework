@@ -18,13 +18,14 @@ import (
 )
 
 type OidcConfig struct {
-	OfflineMode  bool     `json:"offline_mode,omitempty" config:"offline_mode"`
-	ProviderUrl  string   `json:"provider_url" config:"provider_url,required"`
-	ClientId     string   `json:"client_id" config:"client_id,required"`
-	ClientSecret string   `json:"client_secret" config:"client_secret"`
-	RedirectURL  string   `json:"redirect_url,omitempty" config:"redirect_url"`
-	Scopes       []string `json:"scopes,omitempty" config:"scopes"`
-	PublicKeys   []string `json:"public_keys,omitempty" config:"public_keys"`
+	OfflineMode     bool     `json:"offline_mode,omitempty" config:"offline_mode"`
+	ProviderUrl     string   `json:"provider_url" config:"provider_url,required"`
+	ClientId        string   `json:"client_id" config:"client_id,required"`
+	ClientSecret    string   `json:"client_secret" config:"client_secret"`
+	RedirectURL     string   `json:"redirect_url,omitempty" config:"redirect_url"`
+	Scopes          []string `json:"scopes,omitempty" config:"scopes"`
+	PublicKeys      []string `json:"public_keys,omitempty" config:"public_keys"`
+	SkipIssuerCheck bool     `json:"skip_issuer_check,omitempty" config:"skip_issuer_check"`
 }
 
 type OidcAdapter struct {
@@ -76,9 +77,9 @@ func (a *OidcAdapter) Close() (err error) {
 
 func (a *OidcAdapter) GetVerifier() *oidc.IDTokenVerifier {
 	if a.config.OfflineMode {
-		return oidc.NewVerifier(a.config.ProviderUrl, a.staticPublicKeys, &oidc.Config{ClientID: a.config.ClientId})
+		return oidc.NewVerifier(a.config.ProviderUrl, a.staticPublicKeys, &oidc.Config{ClientID: a.config.ClientId, SkipIssuerCheck: a.config.SkipIssuerCheck})
 	} else if a.provider != nil {
-		return a.provider.Verifier(&oidc.Config{ClientID: a.config.ClientId})
+		return a.provider.Verifier(&oidc.Config{ClientID: a.config.ClientId, SkipIssuerCheck: a.config.SkipIssuerCheck})
 	}
 	logrus.WithField("adapter", a.GetName()).Errorf("cannot get verifier - provider empty")
 	return nil
