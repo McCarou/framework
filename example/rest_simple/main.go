@@ -48,5 +48,5 @@ func main() {
 	radian.AddWorker(workerRest)
 
 	// run the worker
-	radian.Run([]string{"service_rest"})
+	radian.Run([]string{workerRest.GetName()})
 }

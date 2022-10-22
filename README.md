@@ -106,7 +106,8 @@ func main() {
 }
 ```
 
-This file contains a REST worker with a handler function which gets database adapter and return status code with payload "Hello world!"<br>
+This file contains a REST worker with a handler function which gets database adapter and return status code with payload "Hello world!"
+<br><br>
 Main function:
 1. creates a framework instance
 2. creates a database adapter connected to a file database
@@ -125,6 +126,9 @@ Application will show the response
 ```
 Hello world!
 ```
+
+Also check [`examples`](examples).
+
 <br>
 
 ### 2 Basic information
@@ -139,7 +143,7 @@ Advantages of using this framwork:
 - have predictable outcomes and stay clear to management teams
 
 Disadvantages:
-- the framework is at an early stage of development
+- the framework is at an early stage of development (but several companies already use it and are happy!)
 - the project is supported by only one developer
 - you have your own better solution or another requirements
 <br><br>
