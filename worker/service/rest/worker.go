@@ -3,11 +3,12 @@ package rest
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 
 	"github.com/radianteam/framework/worker"
@@ -29,17 +30,57 @@ type RestServiceWorker struct {
 
 	routes *gin.Engine
 	server *http.Server
+
+	metricRequestCount *prometheus.CounterVec
 }
 
 func NewRestServiceWorker(name string, config *RestConfig) *RestServiceWorker {
 	gin.SetMode(gin.ReleaseMode)
-	gin.DefaultWriter = ioutil.Discard
+	gin.DefaultWriter = io.Discard
 
-	return &RestServiceWorker{
+	engine := gin.Default()
+
+	wrkr := &RestServiceWorker{
 		BaseWorker: worker.NewBaseWorker(name),
 		config:     config,
-		routes:     gin.Default(),
+		routes:     engine,
+		metricRequestCount: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: "rest_worker_total_requests",
+			Help: "Total requests of the rest worker",
+		}, []string{"worker_name", "code", "method", "url"}),
 	}
+
+	engine.Use(func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+		duration := GetDurationInMillseconds(start)
+
+		entry := wrkr.Logger.WithFields(logrus.Fields{
+			"client_ip": GetClientIP(c),
+			"duration":  duration,
+			"method":    c.Request.Method,
+			"path":      c.Request.RequestURI,
+			"status":    c.Writer.Status(),
+		})
+
+		if wrkr.IsMonitoringEnable() {
+			wrkr.metricRequestCount.With(
+				prometheus.Labels{
+					"worker_name": wrkr.GetName(),
+					"code":        fmt.Sprintf("%d", c.Writer.Status()),
+					"method":      c.Request.Method,
+					"url":         c.Request.RequestURI,
+				}).Inc()
+		}
+
+		if c.Writer.Status() >= 500 {
+			entry.Error(c.Errors.String())
+		} else {
+			entry.Info("Request has been completed")
+		}
+	})
+
+	return wrkr
 }
 
 func (w *RestServiceWorker) SetRoute(method string, path string, handler RegFuncRestServiceWorker) {
@@ -51,25 +92,7 @@ func (w *RestServiceWorker) SetRoute(method string, path string, handler RegFunc
 func (w *RestServiceWorker) Setup() {
 	w.Logger.Infof("Setting up REST Service")
 
-	w.routes.Use(func(c *gin.Context) {
-		start := time.Now()
-		c.Next()
-		duration := GetDurationInMillseconds(start)
-
-		entry := w.Logger.WithFields(logrus.Fields{
-			"client_ip": GetClientIP(c),
-			"duration":  duration,
-			"method":    c.Request.Method,
-			"path":      c.Request.RequestURI,
-			"status":    c.Writer.Status(),
-		})
-
-		if c.Writer.Status() >= 500 {
-			entry.Error(c.Errors.String())
-		} else {
-			entry.Info("Request has been completed")
-		}
-	})
+	prometheus.MustRegister(w.metricRequestCount) // TODO: refactor to Register
 
 	w.server = &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", w.config.Listen, w.config.Port),

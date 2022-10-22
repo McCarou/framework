@@ -160,10 +160,10 @@ func (r *RadianFramework) RunWithJobs(_preJobs []string, _workers []string, _pos
 			}
 
 			r.logger.Infof("worker %s: setting up worker", name)
-			r.workers[name].Setup()
+			r.workers[name].Setup() // TODO: return and check error
 
 			r.logger.Infof("worker %s: running", name)
-			r.workers[name].Run()
+			r.workers[name].Run() // TODO: return and check error
 
 			r.logger.Infof("worker %s: stopping", name)
 			r.logger.Infof("worker %s: deleting adapters", name)
