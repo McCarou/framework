@@ -7,6 +7,9 @@
 ```
 git clone https://github.com/radianteam/framework.git
 ```
+```
+cd framework
+```
 
 #### 2 Goto this folder
 
@@ -22,7 +25,15 @@ docker-compose up -d
 ```
 
 #### 3 Make some requests
+Commands:
+```
+curl 127.0.0.1:8088/ 
+```
+```
+curl 127.0.0.1:8088/absent
+```
 
+Example
 ```
 radian@radian:~$ curl 127.0.0.1:8088/                                   
 Hello world!
@@ -31,7 +42,12 @@ radian@radian:~$ curl 127.0.0.1:8088/absent
 ```
 
 #### 4 Check metrics
+Commands:
+```
+curl 127.0.0.1:8087/metrics
+```
 
+Example
 ```
 radian@radian:~$ curl 127.0.0.1:8087/metrics
 ...
@@ -49,5 +65,5 @@ rest_worker_total_requests{code="404",method="GET",url="/absent",worker_name="se
 And don't forget to stop the application :)
 
 ```
-docker-compose up -d
+docker-compose down
 ```
