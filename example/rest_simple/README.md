@@ -120,7 +120,8 @@ radian@radian:~$ curl 127.0.0.1:8088/
 Hello world!
 ```
 
-The answer has been received! If something goes wrong you can check main.go file or play with it in containers.
+The answer has been received! If something goes wrong you can check [`main.go`](main.go) file or play with it in containers.
+<br><br>
 
 ## 2 Docker compose
 

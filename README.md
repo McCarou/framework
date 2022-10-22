@@ -127,7 +127,7 @@ Application will show the response
 Hello world!
 ```
 
-Also check [`examples`](examples).
+Also check [`examples`](example).
 
 <br>
 
