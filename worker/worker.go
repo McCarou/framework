@@ -17,6 +17,8 @@ type WorkerInterface interface {
 	Setup()
 	Run()
 	Stop()
+	SetMonitoring(enabled bool)
+	IsMonitoringEnable() bool
 }
 
 // Worker structure contains an adapter list and implements
@@ -24,9 +26,10 @@ type WorkerInterface interface {
 // BaseWorker and implement only Setup(), Run() and Stop()
 // functions from WorkerInterface.
 type BaseWorker struct {
-	name     string
-	Logger   *logrus.Entry
-	Adapters *WorkerAdapters
+	name              string
+	monitoringEnabled bool
+	Logger            *logrus.Entry
+	Adapters          *WorkerAdapters
 }
 
 // Function allocates BaseWorker structure with JSON logger
@@ -40,9 +43,10 @@ func NewBaseWorker(name string) *BaseWorker {
 	logger.SetFormatter(&logrus.JSONFormatter{})
 
 	return &BaseWorker{
-		name:     name,
-		Logger:   logger.WithField("worker", name),
-		Adapters: NewWorkerAdapters(),
+		name:              name,
+		Logger:            logger.WithField("worker", name),
+		Adapters:          NewWorkerAdapters(),
+		monitoringEnabled: false,
 	}
 }
 
@@ -77,4 +81,15 @@ func (w *BaseWorker) SetupAdapters() error {
 // framework loop.
 func (w *BaseWorker) CloseAdapters() error {
 	return w.Adapters.CloseAdapters()
+}
+
+// Function enables or disables pushing metrics
+// to the prometheus.
+func (w *BaseWorker) SetMonitoring(enabled bool) {
+	w.monitoringEnabled = enabled
+}
+
+// Function returns monitoring status.
+func (w *BaseWorker) IsMonitoringEnable() bool {
+	return w.monitoringEnabled
 }

@@ -63,13 +63,15 @@ func NewRestServiceWorker(name string, config *RestConfig) *RestServiceWorker {
 			"status":    c.Writer.Status(),
 		})
 
-		wrkr.metricRequestCount.With(
-			prometheus.Labels{
-				"worker_name": wrkr.GetName(),
-				"code":        fmt.Sprintf("%d", c.Writer.Status()),
-				"method":      c.Request.Method,
-				"url":         c.Request.RequestURI,
-			}).Inc()
+		if wrkr.IsMonitoringEnable() {
+			wrkr.metricRequestCount.With(
+				prometheus.Labels{
+					"worker_name": wrkr.GetName(),
+					"code":        fmt.Sprintf("%d", c.Writer.Status()),
+					"method":      c.Request.Method,
+					"url":         c.Request.RequestURI,
+				}).Inc()
+		}
 
 		if c.Writer.Status() >= 500 {
 			entry.Error(c.Errors.String())
