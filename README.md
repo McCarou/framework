@@ -23,7 +23,7 @@ import (
 )
 
 // REST handler function
-func handler_main(c *gin.Context, wc *worker.WorkerAdapters) {
+func handlerMain(c *gin.Context, wc *worker.WorkerAdapters) {
 	// extract the database adapter
 	_, err := wc.Get("db")
 
@@ -43,21 +43,21 @@ func main() {
 	radian := framework.NewRadianFramework()
 
 	// create a new REST worker
-	worker_config := &rest.RestConfig{Listen: "0.0.0.0", Port: 8088}
-	worker_rest := rest.NewRestServiceWorker("service_rest", worker_config)
+	workerConfig := &rest.RestConfig{Listen: "0.0.0.0", Port: 8088}
+	workerRest := rest.NewRestServiceWorker("service_rest", workerConfig)
 
 	// create a database adapter
-	db_config := &sqlx.SqlxConfig{Driver: "sqlite3", ConnectionString: "db.sqlite"}
-	db_adapter := sqlx.NewSqlxAdapter("db", db_config)
+	dbConfig := &sqlx.SqlxConfig{Driver: "sqlite3", ConnectionString: "db.sqlite"}
+	dbAdapter := sqlx.NewSqlxAdapter("db", dbConfig)
 
 	//add the adapter to the worker
-	worker_rest.SetAdapter(db_adapter)
+	workerRest.SetAdapter(dbAdapter)
 
 	// create a route to the worker
-	worker_rest.SetRoute("GET", "/", handler_main)
+	workerRest.SetRoute("GET", "/", handlerMain)
 
 	// append worker to the framework
-	radian.AddWorker(worker_rest)
+	radian.AddWorker(workerRest)
 
 	// run the worker
 	radian.Run([]string{"service_rest"})
