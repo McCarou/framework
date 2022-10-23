@@ -63,7 +63,7 @@ func NewRestServiceWorker(name string, config *RestConfig) *RestServiceWorker {
 			"status":    c.Writer.Status(),
 		})
 
-		if wrkr.IsMonitoringEnable() {
+		if wrkr.IsMonitoringEnable() { // TODO: refactor to 2 separated meddlawares
 			wrkr.metricRequestCount.With(
 				prometheus.Labels{
 					"worker_name": wrkr.GetName(),
