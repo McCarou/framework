@@ -10,29 +10,10 @@ DISCLAIMER: The project is at an early stage of development and is recommended f
 	1. [`Quick start`](#1-quick-start)
 	2. [`Basic information`](#2-basic-information)
 	3. [`Four types of interaction`](#3-four-types-of-interaction)
-	4. [`Workers and adapters`](#4-workers-and-adapters)
+	4. [`Jobs`](#4-jobs)
+	4. [`Workers and adapters`](#5-workers-and-adapters)
 2. [`Supported workers`](#2-supported-workers)
-	1. [`Services`](#1-services)
-		1. [`REST`](#1-rest)
-		2. [`GRPC`](#2-grpc)
-	2. [`Events`](#2-events)
-		1. [`RabbitMQ`](#1-rabbitmq)
-	3. [`Tasks`](#3-tasks)
-		1. [`Schedule`](#1-schedule)
-		2. [`Jobs`](#2-jobs)
-	4. [`Utility`](#4-utility)
-		1. [`Monitoring`](#1-monitoring)
 3. [`Supported adapters`](#3-supported-adapters)
-	1. [`Utility`](#1-utility)
-		1. [`Configuration`](#1-configuration)
-	2. [`Storage`](#2-storage)
-		1. [`Sqlx`](#1-sqlx)
-		2. [`MongoDB`](#2-mongodb)
-		3. [`ArangoDB`](#3-arangodb)
-	3. [`Events`](#3-events)
-		1. [`RabbitMQ`](#1-rabbitmq)
-	4. [`Auth`](#4-auth)
-		1. [`OIDC`](#1-oidc)
 4. [`Project organization`](#4-project-organization)
 	1. [`Main code`](#1-main-code)
 	2. [`Workers`](#2-workers)
@@ -185,11 +166,16 @@ Examples: delayed tasks, fault restoration, periodic checks, status update, etc.
 Examples: connect to financial market protocols, listen to hardware signal sources, etc.
 
 Microservices combining these interactions can provide solutions with any complexity. They can have several instances of one interaction in one microservice. For example, a REST service and a GRPC service in the same time. And their name is NANOSERVICES. Framework can run these nanoservices together like a monolith or devops teams can tune them to run separately and have fine grained control for more security or predictable loading.
+<br><br>
 
 ### 4 Jobs
+Not implemented
+<br><br>
 
 ### 5 Workers and adapters
 Not implemented
+<br><br>
+
 ## 2 Supported workers
 ### 1 Services
 #### 1 REST
