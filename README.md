@@ -132,9 +132,9 @@ Also check [`examples`](example).
 <br>
 
 ### 2 Basic information
-Radian framework is developed to support most of the cloud native patterns and bring new style to create tech projects from business requests and archirecture based on components and interactions. In the framework they are named like workers and adapters. Also the framework is based on four types interaction concept. Author had a lot of experience and developed this framework to help small teams to organize their code and architecture and for hude projects and distributed teams prove a solution to work together without pain (like how to share protocols over teams, how to build microservices and run monolith, how to deal with informational security departments, etc).
+Radian framework is developed to support most of the cloud native patterns and bring new style to create tech projects from business requests and architecture based on components and interactions. In the framework they are named like workers and adapters. Also the framework is based on four types interaction concept. Author had a lot of experience and developed this framework to help small teams to organize their code and architecture and for huge projects and distributed teams prove a solution to work together without pain (like how to share protocols over teams, how to build microservices and run monolith, how to deal with informational security departments, etc).
 <br><br>
-Advantages of using this framwork:
+Advantages of using this framework:
 - run application both as monolith or as microservices
 - boost code organization for distributed teams
 - use 4 interaction paradigm and manage your teams better
@@ -149,8 +149,46 @@ Disadvantages:
 <br><br>
 
 ### 3 Four types of interaction
-Not implemented
-### 4 Workers and adapters
+
+Radian uses "Four types of interaction" concept. The concept explains that any business backend application can be designed with this interactions:
+1. Service interaction or request response. In this type a server listens for incoming connections and make clients wait during the response preparation. Features:
+	- passive interaction: service waits for requests
+	- sync interaction: clients wait while server prepares a response
+	- answer guarantee or error: the are no promises or queues to sent a response as a callback. Client receives an answer immediately
+	- stateless: every request has no any state. Clients must provide additional information about sessions
+	- strong dependency: clients must know server protocols and their address and must control any request fault
+	- consequent process: clients must wait for the previous request completion before starting the next
+	- request retries: if fails request side must retry a request and control fault tolerance policies
+	- can have DoS situation: if server is overflew with request it might not handle any more requests
+Examples: REST or GRPC requests, HTTP, file download, etc.
+2. Event interaction or producer-consumer. Events are async and provide decouple pattern. Features:
+	- passive interaction: service waits for requests
+	- async interaction: clients don't wait, just put a message in a queue and forget about it
+	- answer not guarantee: the is a case when nobody listens to you messages
+	- unknown amount of listeners: service doesn't who and when will read the messages
+	- stateless: every queue message has no any state.
+	- ready for mass requests: client can push a lot of messages and never mind about their handling
+	- avoid DoS situation: all request are put in a queue. There can be queue overflow but in general the consumer will handle messages one by one with the maximum speed.
+Examples: message broker queues (rabbitmq, kafka, sqs), message broadcast, log collecting, async tasks, etc.
+3. Periodic interaction or tasks. A handler can setup periodic logic and run it in the particular time moment or after timeout. Features:
+	- active interaction: service actively call functions to proceed
+	- internal interaction: service doesn't interact in general. This is an internal process
+	- fault tolerance ready: the common case to use this type of interaction is to restore software from unusual conditions or check some signals to react
+	- schedule ready: service plan to run some tasks
+	- wait or not: during processing task when service want to run another it can wait for the previous task completion or run another task with no waiting.
+Examples: delayed tasks, fault restoration, periodic checks, status update, etc.
+4. Permanent interaction or threads. This is non-stop processes inside microservices to make some internal logic or interact with local component or signal sources. Features:
+	- run permanently: the is neither active nor passive interaction. This isn't interaction in general
+	- restart policies: if errors a permanent thread can be restarted or left down
+	- constant connection: perfect for listening some hardware signals or keeping connection to old style system with socket interaction
+	- interaction through another interaction: permanent tasks can init any other interaction (make requests or put a message in a queue) to interract with other services
+Examples: connect to financial market protocols, listen to hardware signal sources, etc.
+
+Microservices combining these interactions can provide solutions with any complexity. They can have several instances of one interaction in one microservice. For example, a REST service and a GRPC service in the same time. And their name is NANOSERVICES. Framework can run these nanoservices together like a monolith or devops teams can tune them to run separately and have fine grained control for more security or predictable loading.
+
+### 4 Jobs
+
+### 5 Workers and adapters
 Not implemented
 ## 2 Supported workers
 ### 1 Services
