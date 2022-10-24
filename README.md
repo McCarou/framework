@@ -169,7 +169,20 @@ Microservices combining these interactions can provide solutions with any comple
 <br><br>
 
 ### 4 Jobs
-Not implemented
+
+Framework implements jobs that can be run before or after the main application loop. They are called pretasks and posttasks.
+Pretasks can be used for:
+- getting auth keys
+- downloading session certs
+- initialize something like queues and other stuff you may need before starting.
+
+Posttasks are for:
+- revoking auth session
+- notice other processes about stopping
+- deleting session data and queues
+
+This tasks are not for migrations! You can use them for it but it is better to do migrations by devops. The only way to use tasks for migration or data seed is when you run your application as monolith.
+
 <br><br>
 
 ### 5 Workers and adapters
