@@ -31,12 +31,13 @@ func main() {
 	// create a route to the worker
 	workerRest.SetRoute("GET", "/", handlerMain)
 
+	// enable metrics collecting
 	workerRest.SetMonitoring(true)
 
-	// append worker to the framework
+	// append workers to the framework
 	radian.AddWorker(workerRest)
 	radian.AddWorker(worker_prometheus)
 
-	// run the worker
+	// run the workers
 	radian.Run([]string{workerRest.GetName(), worker_prometheus.GetName()})
 }
