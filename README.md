@@ -10,8 +10,8 @@ DISCLAIMER: The project is at an early stage of development and is recommended f
 	1. [`Quick start`](#1-quick-start)
 	2. [`Basic information`](#2-basic-information)
 	3. [`Four types of interaction`](#3-four-types-of-interaction)
-	4. [`Jobs`](#4-jobs)
-	4. [`Workers and adapters`](#5-workers-and-adapters)
+	4. [`Workers and adapters`](#4-workers-and-adapters)
+	4. [`Jobs`](#5-jobs)
 2. [`Supported workers`](#2-supported-workers)
 3. [`Supported adapters`](#3-supported-adapters)
 4. [`Project organization`](#4-project-organization)
@@ -168,12 +168,25 @@ Examples: connect to financial market protocols, listen to hardware signal sourc
 Microservices combining these interactions can provide solutions with any complexity. They can have several instances of one interaction in one microservice. For example, a REST service and a GRPC service in the same time. And their name is NANOSERVICES. Framework can run these nanoservices together like a monolith or devops teams can tune them to run separately and have fine grained control for more security or predictable loading.
 <br><br>
 
-### 4 Jobs
+### 4 Workers and adapters
 Not implemented
 <br><br>
 
-### 5 Workers and adapters
-Not implemented
+### 5 Jobs
+
+Framework implements jobs that can be run before or after the main application loop. They are called pretasks and posttasks.
+Pretasks can be used for:
+- getting auth keys
+- downloading session certs
+- initialize something like queues and other stuff you may need before starting.
+
+Posttasks are for:
+- revoking auth session
+- notice other processes about stopping
+- deleting session data and queues
+
+This tasks are not for migrations! You can use them for it but it is better to do migrations by devops. The only way to use tasks for migration or data seed is when you run your application as monolith.
+
 <br><br>
 
 ## 2 Supported workers
