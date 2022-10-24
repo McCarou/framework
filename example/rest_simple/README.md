@@ -13,7 +13,7 @@ module example
 go 1.19
 
 require (
-	github.com/radianteam/framework v0.2.7
+	github.com/radianteam/framework v0.2.8
 )
 ```
 
@@ -67,7 +67,7 @@ Add the REST worker to the main framework instance:
 	radian.AddWorker(workerRest)
 ```
 
-Run the framework instance with the particulat services:
+Run the framework instance with the particular services:
 
 ``` go
     // run the worker
@@ -125,7 +125,7 @@ The answer has been received! If something goes wrong you can check [`main.go`](
 
 ## 2 Docker compose
 
-#### 1 Clone the repository
+### 1 Clone the repository
 
 ```
 git clone https://github.com/radianteam/framework.git
@@ -134,20 +134,20 @@ git clone https://github.com/radianteam/framework.git
 cd framework
 ```
 
-#### 2 Goto this folder
+### 2 Goto this folder
 
 ```
 cd example/rest_simple
 ```
 
 
-#### 3 Run the application
+### 3 Run the application
 
 ```
 docker-compose up -d
 ```
 
-#### 4 Make a request
+### 4 Make a request
 Commands:
 ```
 curl 127.0.0.1:8088/ 
@@ -159,7 +159,7 @@ radian@radian:~$ curl 127.0.0.1:8088/
 Hello world!
 ```
 
-#### 5 Enjoy!
+### 5 Enjoy!
 
 And don't forget to stop the application :)
 
