@@ -170,16 +170,66 @@ func (a *AwsS3Adapter) BucketItemDownloadFile(bucket string, key string, path st
 	return numBytes, err
 }
 
-func (a *AwsS3Adapter) BucketItemDelete() *s3.S3 {
-	return a.s3Client
+func (a *AwsS3Adapter) BucketItemDelete(name string, key string, wait bool) (err error) {
+	_, err = a.s3Client.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(name), Key: aws.String(key)})
+
+	if err != nil {
+		logrus.WithField("adapter", a.GetName()).Error(err)
+		return
+	}
+
+	if wait {
+		err = a.s3Client.WaitUntilObjectNotExists(&s3.HeadObjectInput{
+			Bucket: aws.String(name),
+			Key:    aws.String(key),
+		})
+
+		if err != nil {
+			logrus.WithField("adapter", a.GetName()).Error(err)
+			return
+		}
+	}
+
+	return
 }
 
-func (a *AwsS3Adapter) BucketClear() *s3.S3 {
-	return a.s3Client
+func (a *AwsS3Adapter) BucketClear(name string) (err error) {
+	iter := s3manager.NewDeleteListIterator(a.s3Client, &s3.ListObjectsInput{
+		Bucket: aws.String(name),
+	})
+
+	err = s3manager.NewBatchDeleteWithClient(a.s3Client).Delete(aws.BackgroundContext(), iter)
+
+	if err != nil {
+		logrus.WithField("adapter", a.GetName()).Error(err)
+		return
+	}
+
+	return
 }
 
-func (a *AwsS3Adapter) BucketDelete() *s3.S3 {
-	return a.s3Client
+func (a *AwsS3Adapter) BucketDelete(name string, wait bool) (err error) {
+	_, err = a.s3Client.DeleteBucket(&s3.DeleteBucketInput{
+		Bucket: aws.String(name),
+	})
+
+	if err != nil {
+		logrus.WithField("adapter", a.GetName()).Error(err)
+		return
+	}
+
+	if wait {
+		err = a.s3Client.WaitUntilBucketNotExists(&s3.HeadBucketInput{
+			Bucket: aws.String(name),
+		})
+
+		if err != nil {
+			logrus.WithField("adapter", a.GetName()).Error(err)
+			return
+		}
+	}
+
+	return
 }
 
 // TODO: implement restore item
