@@ -5,16 +5,17 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 type AwsS3Config struct {
-	Servers            []string `json:"servers,omitempty" config:"servers,required"`
-	Username           string   `json:"username,omitempty" config:"username,required"`
-	Password           string   `json:"password,omitempty" config:"password"`
-	Database           string   `json:"database,omitempty" config:"database,required"`
-	InsecureSkipVerify bool     `json:"insecure_skip_verify,omitempty" config:"insecure_skip_verify"`
+	Endpoint        string `json:"endpoint,omitempty" config:"endpoint,required"`
+	AccessKeyID     string `json:"access_key_id,omitempty" config:"access_key_id,required"`
+	SecretAccessKey string `json:"secret_access_key,omitempty" config:"secret_access_key,required"`
+	SessionToken    string `json:"session_token,omitempty" config:"session_token,required"`
+	Region          string `json:"region,omitempty" config:"region,required"`
 }
 
 type AwsS3Adapter struct {
@@ -32,8 +33,10 @@ func NewAwsS3Adapter(name string, config *AwsS3Config) *AwsS3Adapter {
 
 func (a *AwsS3Adapter) Setup() (err error) {
 	a.awsSession, err = session.NewSession(&aws.Config{
-		Region: aws.String("us-west-2")},
-	)
+		Endpoint:    aws.String(a.config.Endpoint),
+		Region:      aws.String(a.config.Region),
+		Credentials: credentials.NewStaticCredentials(a.config.AccessKeyID, a.config.SecretAccessKey, a.config.SessionToken),
+	})
 
 	if err != nil {
 		logrus.WithField("adapter", a.GetName()).Error(err)
@@ -87,28 +90,4 @@ func (a *AwsS3Adapter) BucketCreate(name string, wait bool) (err error) {
 	}
 
 	return
-}
-
-func (a *AwsS3Adapter) BucketItemList() *s3.S3 {
-	return a.s3Client
-}
-
-func (a *AwsS3Adapter) BucketItemUpload() *s3.S3 {
-	return a.s3Client
-}
-
-func (a *AwsS3Adapter) BucketItemDownload() *s3.S3 {
-	return a.s3Client
-}
-
-func (a *AwsS3Adapter) BucketItemDelete() *s3.S3 {
-	return a.s3Client
-}
-
-func (a *AwsS3Adapter) BucketClear() *s3.S3 {
-	return a.s3Client
-}
-
-func (a *AwsS3Adapter) BucketDelete() *s3.S3 {
-	return a.s3Client
 }
