@@ -191,33 +191,29 @@ This tasks are not for migrations! You can use them for it but it is better to d
 
 ## 2 Supported workers
 
-| Worker  | Type | Description |
+| Worker | Type | Description |
 | ------------- | ------------- | ------------- |
 | REST | Service | Service based on [Gin](github.com/gin-gonic/gin) REST library |
 | GRPC | Service | Service based on vanilla [GRPC](google.golang.org/grpc) library |
-| RabbitMQ | Event | Event worker based on [AMQP](github.com/streadway/amqp) library |
+| RabbitMQ | Event | Event worker based on [RabbitMQ](adapter/event/rabbitmq) framework adapter |
 | Schedule | Periodic | Scheduler for periodic tasks based on [Chrono](github.com/procyon-projects/chrono) library |
 | Job | Permament | Task worker for permament workers and one-time operations in pretasks and posttasks |
 | Monitoring | Special | REST Service based on [Gin](github.com/gin-gonic/gin) library and [Prometheus Go](https://github.com/prometheus/client_golang/) libary with /metrics endpoint for prometheus scraper |
 <br>
 
 ## 3 Supported adapters
-### 1 Utility
-#### 1 Configuration
-Not implemented
-### 2 Storage
-#### 1 Sqlx
-Not implemented
-#### 2 MongoDB
-Not implemented
-#### 3 ArangoDB
-Not implemented
-### 3 Events
-#### 1 RabbitMQ
-Not implemented
-### 4 Auth
-#### 1 OIDC
-Not implemented
+
+| Adapter | Type | Description |
+| ------------- | ------------- | ------------- |
+| Config | Utils | Utility adapter for configuration loading. Supports loading from file and environment variables. Configuration can be unmarshaled in a service and adapter configuration structs with correct tags. |
+| Sqlx | Storage | Database adapter based on [Sqlx](github.com/jmoiron/sqlx) library. Supports all database drivers for database/sql package |
+| MongoDB | Storage | Database adapter based on [MongoDB](go.mongodb.org/mongo-driver/mongo) driver |
+| ArangoDB | Storage | Gaph database adapter based on [ArangoDB](github.com/arangodb/go-driver) driver |
+| AWS S3 | Storage | Object storage adapter implementing S3 protocol. Based on [AWS](github.com/aws/aws-sdk-go) SDK |
+| RabbitMQ | Event | Event adapter based on [AMQP](github.com/streadway/amqp) library |
+| OIDC | Auth | Auth adapter implementing OpenID connect protocol. Based on [go-oidc](https://github.com/coreos/go-oidc/) library. Supports sync (introspect) and offline (public keys) checking |
+<br>
+
 ## 4 Project organization
 ### 1 Main code
 Not implemented
