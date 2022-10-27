@@ -187,25 +187,20 @@ Posttasks are for:
 
 This tasks are not for migrations! You can use them for it but it is better to do migrations by devops. The only way to use tasks for migration or data seed is when you run your application as monolith.
 
-<br><br>
+<br>
 
 ## 2 Supported workers
-### 1 Services
-#### 1 REST
-Not implemented
-#### 2 GRPC
-Not implemented
-### 2 Events
-#### 1 RabbitMQ
-Not implemented
-### 3 Tasks
-#### 1 Schedule
-Not implemented
-#### 2 Jobs
-Not implemented
-### 4 Utility
-#### 1 Monitoring
-Not implemented
+
+| Worker  | Type | Description |
+| ------------- | ------------- | ------------- |
+| REST | Service | Service based on [Gin](github.com/gin-gonic/gin) REST library |
+| GRPC | Service | Service based on vanilla [GRPC](google.golang.org/grpc) library |
+| RabbitMQ | Event | Event worker based on [AMQP](github.com/streadway/amqp) library |
+| Schedule | Periodic | Scheduler for periodic tasks based on [Chrono](github.com/procyon-projects/chrono) library |
+| Job | Permament | Task worker for permament workers and one-time operations in pretasks and posttasks |
+| Monitoring | Special | REST Service based on [Gin](github.com/gin-gonic/gin) library and [Prometheus Go](https://github.com/prometheus/client_golang/) libary with /metrics endpoint for prometheus scraper |
+<br>
+
 ## 3 Supported adapters
 ### 1 Utility
 #### 1 Configuration
