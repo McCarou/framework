@@ -164,11 +164,23 @@ Examples: delayed tasks, fault restoration, periodic checks, status update, etc.
 Examples: connect to financial market protocols, listen to hardware signal sources, etc.
 
 Microservices combining these interactions can provide solutions with any complexity. They can have several instances of one interaction in one microservice. For example, a REST service and a GRPC service in the same time. And their name is NANOSERVICES. Framework can run these nanoservices together like a monolith or devops teams can tune them to run separately and have fine grained control for more security or predictable loading.
-<br><br>
+
+<br>
 
 ### 4 Workers and adapters
-Not implemented
-<br><br>
+Four types of interactions are implemented by workers: one of two basic primitives of the framework. Workers are processes inside an execution that make all dos.
+Every worker is a goroutine. Developers can make any amount of workers and group to run separated or together. So they can be run as monolith or microservices or nanoservices.
+If a project is a microservice that has a worker for request-response interaction, one for periodic logic and one for event consuming, it can be run as one process. This will be a regular microservice. On the other hand devops can run them separately like 3 nanoservices (sometimes cybersecurity demands it). Or devops can run one more process with only one worker to up performance if only one part of this microservice is overloaded.
+If a project is a monolith with a lot of microservices, developers can put directives to run them all in one process or run separately several workers as one microservice.
+
+Adapters are interaction primitives between workers or external system. Basically adapters support popular cloud native services like s3 or PaaS databases. Everything else like email sending or payment system integration also must be developed as adapters and connected to workers which need them.
+All interactions between microservices developed with this framework supposed to be developed as adapters. It is better to provide an adapter for a microservice and don't force other teams to develop a library for it every time they need it.
+
+If adapters and workers are considered from the point of view of graph architecture: workers are nodes and adapters are links.
+
+Warning! If a project has microservices as workers and they interact via network connections or external message brokers and microcervices can be run as monolith, it is better to make interaction between them via channels or internal queues. Framework provides solutions for these cases: service worker based on channels (in development) and internal message broker (in development).
+
+<br>
 
 ### 5 Jobs
 

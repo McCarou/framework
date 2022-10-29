@@ -2,9 +2,9 @@ package framework
 
 // TODO: healthchecks
 // TODO: worker rabbitmq reconnect
-// TODO: context email
+// TODO: adapter email
 // TODO: tests
-// TODO: make workers for periodic, permanent, prejobs and postjobs
+// TODO: make permanent workers
 
 import (
 	"context"
