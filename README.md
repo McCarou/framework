@@ -231,6 +231,6 @@ Not implemented
 ## 5 External links
 ### 1 Examples
 
-[`Simple REST service`](example/simple_rest)
+[`Simple REST service`](example/rest_simple)
 
 [`REST service with monitoring (prometheus metrics)`](example/monitoring)
