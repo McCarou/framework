@@ -23,8 +23,6 @@ DISCLAIMER: The project is at an early stage of development and is recommended f
 	6. [`Framework lifecycle`](#6-framework-lifecycle)
 5. [`External links`](#5-external-links)
 	1. [`Examples`](#1-examples)
-		1. [`Simple REST service`](example/simple_rest)
-		2. [`REST service with monitoring`](example/monitoring)
 
 # Documentation
 ## 1 Framework
@@ -227,9 +225,12 @@ Not implemented
 Not implemented
 ### 6 Framework lifecycle
 Not implemented
+
+<br>
+
 ## 5 External links
 ### 1 Examples
-#### 1 Simple REST service
-Not implemented
-#### 2 REST service with monitoring (prometheus metrics)
-Not implemented
+
+[`Simple REST service`](example/simple_rest)
+
+[`REST service with monitoring (prometheus metrics)`](example/monitoring)
