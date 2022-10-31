@@ -15,11 +15,12 @@ import (
 )
 
 type AwsS3Config struct {
-	Endpoint        string `json:"endpoint,omitempty" config:"endpoint,required"`
-	AccessKeyID     string `json:"access_key_id,omitempty" config:"access_key_id,required"`
-	SecretAccessKey string `json:"secret_access_key,omitempty" config:"secret_access_key,required"`
-	SessionToken    string `json:"session_token,omitempty" config:"session_token,required"`
-	Region          string `json:"region,omitempty" config:"region,required"`
+	Endpoint             string `json:"endpoint,omitempty" config:"endpoint"`
+	AccessKeyID          string `json:"access_key_id,omitempty" config:"access_key_id"`
+	SecretAccessKey      string `json:"secret_access_key,omitempty" config:"secret_access_key"`
+	SessionToken         string `json:"session_token,omitempty" config:"session_token"`
+	Region               string `json:"region,omitempty" config:"region,required"`
+	SharedCredentialFile bool   `json:"shared_credential_file,omitempty" config:"shared_credential_file"`
 }
 
 type AwsS3Adapter struct {
@@ -36,11 +37,15 @@ func NewAwsS3Adapter(name string, config *AwsS3Config) *AwsS3Adapter {
 }
 
 func (a *AwsS3Adapter) Setup() (err error) {
-	a.awsSession, err = session.NewSession(&aws.Config{
-		Endpoint:    aws.String(a.config.Endpoint),
-		Region:      aws.String(a.config.Region),
-		Credentials: credentials.NewStaticCredentials(a.config.AccessKeyID, a.config.SecretAccessKey, a.config.SessionToken),
-	})
+	conf := &aws.Config{
+		Endpoint: aws.String(a.config.Endpoint),
+		Region:   aws.String(a.config.Region)}
+
+	if !a.config.SharedCredentialFile {
+		conf.Credentials = credentials.NewStaticCredentials(a.config.AccessKeyID, a.config.SecretAccessKey, a.config.SessionToken)
+	}
+
+	a.awsSession, err = session.NewSession(conf)
 
 	if err != nil {
 		logrus.WithField("adapter", a.GetName()).Error(err)
