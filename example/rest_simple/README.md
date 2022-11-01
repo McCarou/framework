@@ -17,7 +17,7 @@ require (
 )
 ```
 
-This file declare a module and the framework requirement.
+This file declares a module and the framework requirement.
 
 Create a file named main.go and define the package inside:
 

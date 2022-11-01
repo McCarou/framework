@@ -37,7 +37,7 @@ func handlerRead(c *gin.Context, wc *worker.WorkerAdapters) {
 	c.String(http.StatusOK, fmt.Sprintf("The last message: %s\n", lastMessage))
 }
 
-// REST handler: reads POST body and send an event to RabbitMQ
+// REST handler: reads POST body and sends an event to RabbitMQ
 func handlerSend(c *gin.Context, wc *worker.WorkerAdapters) {
 	buff, _ := io.ReadAll(c.Request.Body)
 
@@ -54,10 +54,12 @@ func main() {
 	// create init prejob to declare a queue
 	initMqJob := job.NewTaskJob("init_mq", InitRabbitMqExchange)
 
+	// create an adapter for rabbitmq
 	adapterMqConfig := &rmq_adapter.RabbitMqConfig{Host: "rabbitmq", Port: 5672, Username: "example", Password: "pass", Exchange: ""}
 	adapterMq := rmq_adapter.NewRabbitMqAdapter("rmq", adapterMqConfig)
 	initMqJob.SetAdapter(adapterMq)
 
+	// add prejob in the framework
 	radian.AddPreJob(initMqJob)
 
 	// create a new REST worker

@@ -14,13 +14,11 @@ import (
 type RabbitMqEventWorkerRegFunc func(d *amqp.Delivery, wc *worker.WorkerAdapters) error
 
 type RabbitMqConfig struct {
-	Host          string   `json:"host,omitempty" config:"host,required"`
-	Port          int16    `json:"port,omitempty" config:"port,required"`
-	Username      string   `json:"username,omitempty" config:"username,required"`
-	Password      string   `json:"password,omitempty" config:"password,required"`
-	Exchange      string   `json:"exchange,omitempty" config:"exchange"`
-	Listen        []string `json:"listen,omitempty" config:"listen"`
-	PrefetchCount int      `json:"prefetch_count,omitempty" config:"prefetch_count"`
+	Host          string `json:"host,omitempty" config:"host,required"`
+	Port          int16  `json:"port,omitempty" config:"port,required"`
+	Username      string `json:"username,omitempty" config:"username,required"`
+	Password      string `json:"password,omitempty" config:"password,required"`
+	PrefetchCount int    `json:"prefetch_count,omitempty" config:"prefetch_count"`
 }
 
 type RabbitMqEventWorker struct {
@@ -29,7 +27,6 @@ type RabbitMqEventWorker struct {
 	config *RabbitMqConfig
 
 	connection *amqp.Connection
-	channel    *amqp.Channel
 
 	mutex    sync.Mutex
 	waitChan chan bool
@@ -64,15 +61,6 @@ func (w *RabbitMqEventWorker) Run() {
 		w.Logger.Fatalf("dial %s\n", err)
 	}
 
-	if w.channel, err = w.connection.Channel(); err != nil {
-		w.Logger.Fatalf("channel create %s\n", err)
-	}
-
-	err = w.channel.Qos(int(w.config.PrefetchCount), 0, false) // TODO: hardcode
-	if err != nil {
-		w.Logger.Fatalf("Cannot prepare qos - %s\n", err)
-	}
-
 	wg := sync.WaitGroup{}
 
 	for queueName, routingKeys := range w.handlers {
@@ -83,7 +71,18 @@ func (w *RabbitMqEventWorker) Run() {
 
 			w.Logger.Infof("Consuming queue %s", name)
 
-			msgs, err := w.channel.Consume(name, w.GetName(), false, false, false, false, nil) // TODO: hardcoded values
+			channel, err := w.connection.Channel()
+
+			if err != nil {
+				w.Logger.Fatalf("channel create %s\n", err)
+			}
+
+			err = channel.Qos(int(w.config.PrefetchCount), 0, false) // TODO: hardcode
+			if err != nil {
+				w.Logger.Fatalf("Cannot prepare qos - %s\n", err)
+			}
+
+			msgs, err := channel.Consume(name, w.GetName(), false, false, false, false, nil) // TODO: hardcoded values
 
 			if err != nil {
 				w.Logger.Fatalf("Consuming queue %s started with error %v", name, err)
@@ -119,6 +118,9 @@ func (w *RabbitMqEventWorker) Run() {
 				message.Ack(true)
 			}
 
+			channel.Cancel(name, false)
+			channel.Close()
+
 			w.Logger.Infof("Consuming queue %s stopped", name)
 		}(queueName, routingKeys)
 	}
@@ -129,11 +131,6 @@ func (w *RabbitMqEventWorker) Run() {
 
 	w.Logger.Info("Stopping RabbitMq Events")
 
-	for queueName := range w.handlers {
-		w.channel.Cancel(queueName, false)
-	}
-
-	w.channel.Close()
 	w.connection.Close()
 
 	wg.Wait()
