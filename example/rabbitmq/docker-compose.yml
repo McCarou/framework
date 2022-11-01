@@ -1,0 +1,25 @@
+version: "3.3"
+services:
+  app:
+    build:
+      context: ./../../
+      dockerfile: example/rabbitmq/Dockerfile
+      target: app
+    restart: always
+    ports:
+      - 8088:8088
+    networks:
+      - app_network
+  rabbitmq:
+    image: 'rabbitmq:3.10.7-management'
+    networks:
+      - app_network
+    environment:
+      RABBITMQ_DEFAULT_USER: "example"
+      RABBITMQ_DEFAULT_PASS: "pass"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+networks:
+  app_network:
+    driver: bridge

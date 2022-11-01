@@ -83,6 +83,16 @@ func (a *RabbitMqAdapter) DeclareExchange(name string, kind string, durable bool
 	return a.channel.ExchangeDeclare(name, kind, durable, false, false, false, nil)
 }
 
+func (a *RabbitMqAdapter) DeclareQueue(name string, durable bool) (err error) {
+	if err = a.checkConnection(); err != nil {
+		return
+	}
+
+	_, err = a.channel.QueueDeclare(name, durable, false, false, false, nil)
+
+	return err
+}
+
 func (a *RabbitMqAdapter) PublishExchange(exchange string, key string, message []byte) (err error) {
 	if err = a.checkConnection(); err != nil {
 		return
