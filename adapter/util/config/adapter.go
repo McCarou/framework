@@ -164,7 +164,7 @@ func (a *ConfigAdapter) GetValue(path []string) (any, error) {
 	result, ok := n[path[len(path)-1]]
 
 	if !ok {
-		return nil, errors.New("value not found")
+		return nil, errors.New("value not found") // TODO: return name of the value
 	}
 
 	return result, nil

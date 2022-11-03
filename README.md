@@ -184,7 +184,7 @@ Warning! If a project has microservices as workers and they interact via network
 
 ### 5 Jobs
 
-Framework implements jobs that can be run before or after the main application loop. They are called pretasks and posttasks.
+Framework implements jobs that can be executed before or after the main application loop. They are called pretasks and posttasks.
 Pretasks can be used for:
 - getting auth keys
 - downloading session certs
@@ -226,7 +226,81 @@ This tasks are not for migrations! You can use them for it but it is better to d
 
 ## 4 Project organization
 ### 1 Main code
-Not implemented
+
+Projects made with the framework doesn't have strict structure. Developers can make all logic in one main.go file or use their familiar structure. The author of the framework likes the following:
+
+```
+Project directory
+|
+|- contract (optional)
+|  |- gen
+|  |  |- contract.pb.go
+|  |  |- contract_grpc.pb.go
+|  |
+|  |- contract.proto
+|  
+|- data
+|  |- entity
+|     |- mapper.go
+|     |- model.go
+|     |- repository.go
+|
+|- doc
+|  |- database.dbm
+|  |- postman.json
+|  |- logic.plantuml
+|
+|- job
+|  |- any_prejob.go
+|
+|- migration
+|  |- 00_scheme.sql
+|
+|- util
+|  |- helper.go
+|
+|- worker
+|  |- service
+|  |  |- name
+|  |     |- rest_handler_1.go
+|  |     |- rest_handler_2.go
+|  |
+|  |- event
+|  |  |- name
+|  |     |- event_handler_1.go
+|  |     |- event_handler_2.go
+|  |
+|  |- periodic
+|     |- schedule_handler_1.go
+|
+|- docker-dompose.yml
+|- Dockerfile
+|- go.mod
+|- go.sum
+|- main.go
+|- README.md
+```
+
+Project directory contains:
+- **contract** (ignore it if project doesn't use GRPC or another descriptive protocols): here developers can have proto descriptions or schemes for another protocols. Also this directory keeps gen directory for saving compiled proto and GRPC files. This means that developers must save in a project compiled version of their protocols. This is useful for including to another project and developing custom adapters for framework microservices
+- **data**: data folder has folders for data transfer objects and their logic. Every entity has three files:
+  - **model.go** for structures of a transfer object and enums
+  - **repository.go** for storage logic implementation
+  - **mapper.go** for mapping model structures into or from another data like proto or JSON
+- **doc**: this folder contains supporting documents like database descriptions, schemes, UML and files for testing software (like Postman). All the documents must have text format so that developers can easily check their updates. Images are acceptable but not recommended
+- **job**: contains files with handlers for prejobs and postjobs
+- **migration**: contains sql files, json scheme validation files and other data to load into storage or stateful components
+- **util**: any code that is used in several packages to avoid boilerplate and copy-past code
+- **worker**: contains directories for services. Every service directory contains files for handlers or another functions and helpers.
+- **docker-compose.yml**: good idea to provide some testing environment for the project
+- **Dockerfile**: used in docker-compose and provide a proper way to build a container to run. If project deploys not in a docker developers can use another technologies and ignore docker files
+- **go.mod**: no commentaries
+- **go.sum**: no commentaries
+- **main.go**: implements project setup with adapters and workers
+- **README.md**: it is important and really cool when developers provide some documentation for the project
+
+<br>
+
 ### 2 Workers
 Not implemented
 ### 3 Work with data
