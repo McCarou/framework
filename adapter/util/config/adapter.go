@@ -265,11 +265,14 @@ func (a *ConfigAdapter) unmarshalFromMap(source map[string]any, destination inte
 				valueOfDest.Field(i).Kind() == reflect.Int64 ||
 				valueOfDest.Field(i).Kind() == reflect.Int8) &&
 				sourceReflectValue.Kind() == reflect.String {
-				intVal, err := strconv.ParseInt(sourceReflectValue.String(), 10, int(valueOfDest.Field(i).Type().Size()))
+				intVal, err := strconv.ParseInt(sourceReflectValue.String(), 10, int(valueOfDest.Field(i).Type().Size())*8)
+
 				if err != nil {
 					return err
 				}
-				valueOfDest.Field(i).Set(reflect.ValueOf(intVal))
+
+				valueOfDest.Field(i).Set(reflect.ValueOf(intVal).Convert(valueOfDest.Field(i).Type()))
+
 				continue
 			}
 
@@ -279,32 +282,41 @@ func (a *ConfigAdapter) unmarshalFromMap(source map[string]any, destination inte
 				valueOfDest.Field(i).Kind() == reflect.Uint64 ||
 				valueOfDest.Field(i).Kind() == reflect.Uint8) &&
 				sourceReflectValue.Kind() == reflect.String {
-				intVal, err := strconv.ParseUint(sourceReflectValue.String(), 10, int(valueOfDest.Field(i).Type().Size()))
+				uintVal, err := strconv.ParseUint(sourceReflectValue.String(), 10, int(valueOfDest.Field(i).Type().Size())*8)
+
 				if err != nil {
 					return err
 				}
-				valueOfDest.Field(i).Set(reflect.ValueOf(intVal))
+
+				valueOfDest.Field(i).Set(reflect.ValueOf(uintVal).Convert(valueOfDest.Field(i).Type()))
+
 				continue
 			}
 
 			if valueOfDest.Field(i).Kind() == reflect.Bool &&
 				sourceReflectValue.Kind() == reflect.String {
-				intVal, err := strconv.ParseBool(sourceReflectValue.String())
+				boolVal, err := strconv.ParseBool(sourceReflectValue.String())
+
 				if err != nil {
 					return err
 				}
-				valueOfDest.Field(i).Set(reflect.ValueOf(intVal))
+
+				valueOfDest.Field(i).Set(reflect.ValueOf(boolVal).Convert(valueOfDest.Field(i).Type()))
+
 				continue
 			}
 
 			if (valueOfDest.Field(i).Kind() == reflect.Float32 ||
 				valueOfDest.Field(i).Kind() == reflect.Float64) &&
 				sourceReflectValue.Kind() == reflect.String {
-				intVal, err := strconv.ParseFloat(sourceReflectValue.String(), int(valueOfDest.Field(i).Type().Size()))
+				floatVal, err := strconv.ParseFloat(sourceReflectValue.String(), int(valueOfDest.Field(i).Type().Size())*8)
+
 				if err != nil {
 					return err
 				}
-				valueOfDest.Field(i).Set(reflect.ValueOf(intVal))
+
+				valueOfDest.Field(i).Set(reflect.ValueOf(floatVal).Convert(valueOfDest.Field(i).Type()))
+
 				continue
 			}
 
