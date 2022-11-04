@@ -101,8 +101,8 @@ func (a *AwsS3Adapter) BucketCreate(name string, wait bool) (err error) {
 	return
 }
 
-func (a *AwsS3Adapter) BucketItemList(name string) ([]*s3.Object, error) {
-	resp, err := a.s3Client.ListObjectsV2(&s3.ListObjectsV2Input{Bucket: aws.String(name)})
+func (a *AwsS3Adapter) BucketItemList(name string, prefix string) ([]*s3.Object, error) {
+	resp, err := a.s3Client.ListObjectsV2(&s3.ListObjectsV2Input{Bucket: aws.String(name), Prefix: aws.String(prefix)})
 
 	if err != nil {
 		logrus.WithField("adapter", a.GetName()).Error(err)

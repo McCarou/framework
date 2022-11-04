@@ -46,7 +46,18 @@ func main() {
 	}
 
 	// get the list of items
-	bilist, err := s3Adapter.BucketItemList("testbucket")
+	bilist, err := s3Adapter.BucketItemList("testbucket", "")
+
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+	for _, s := range bilist {
+		fmt.Printf("bucket item: %s %s %d %s\n", *s.Key, s.LastModified.Format(time.RFC3339Nano), s.Size, *s.StorageClass)
+	}
+
+	// get the list of items in a folder
+	bilist, err = s3Adapter.BucketItemList("testbucket", "testfolder")
 
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
