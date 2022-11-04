@@ -15,12 +15,12 @@ import (
 )
 
 type AwsS3Config struct {
-	Endpoint             string `json:"endpoint,omitempty" config:"endpoint"`
-	AccessKeyID          string `json:"access_key_id,omitempty" config:"access_key_id"`
-	SecretAccessKey      string `json:"secret_access_key,omitempty" config:"secret_access_key"`
-	SessionToken         string `json:"session_token,omitempty" config:"session_token"`
-	Region               string `json:"region,omitempty" config:"region,required"`
-	SharedCredentialFile bool   `json:"shared_credential_file,omitempty" config:"shared_credential_file"`
+	Endpoint          string `json:"endpoint,omitempty" config:"endpoint"`
+	AccessKeyID       string `json:"access_key_id,omitempty" config:"access_key_id"`
+	SecretAccessKey   string `json:"secret_access_key,omitempty" config:"secret_access_key"`
+	SessionToken      string `json:"session_token,omitempty" config:"session_token"`
+	Region            string `json:"region,omitempty" config:"region,required"`
+	SharedCredentials bool   `json:"shared_credentials,omitempty" config:"shared_credentials"`
 }
 
 type AwsS3Adapter struct {
@@ -41,7 +41,7 @@ func (a *AwsS3Adapter) Setup() (err error) {
 		Endpoint: aws.String(a.config.Endpoint),
 		Region:   aws.String(a.config.Region)}
 
-	if !a.config.SharedCredentialFile {
+	if !a.config.SharedCredentials {
 		conf.Credentials = credentials.NewStaticCredentials(a.config.AccessKeyID, a.config.SecretAccessKey, a.config.SessionToken)
 	}
 

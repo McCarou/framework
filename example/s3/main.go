@@ -11,7 +11,7 @@ import (
 func main() {
 	// setup credentials for the S3 adapter
 	s3Adapter := s3.NewAwsS3Adapter("s3", &s3.AwsS3Config{Region: "us-west-2", Endpoint: "http://s3.localhost.localstack.cloud:4566", AccessKeyID: "test", SecretAccessKey: "hat", SessionToken: "hat2"})
-	//s3Adapter := s3.NewAwsS3Adapter("s3", &s3.AwsS3Config{Region: "us-west-2", SharedCredentialFile: true})
+	//s3Adapter := s3.NewAwsS3Adapter("s3", &s3.AwsS3Config{Region: "us-west-2", SharedCredentials: true})
 
 	s3Adapter.Setup()
 
