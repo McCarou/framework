@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -18,8 +19,8 @@ import (
 
 const DefaultJsonConfigPath string = "config.json"
 const DefaultConfigEnvPrefix string = "RADIAN"
-const DefaultTagConfigName = "config"
-const DefaultTagConfigRequiredName = "required"
+const TagConfigName = "config"
+const TagConfigRequiredName = "required"
 
 type ConfigAdapter struct {
 	*adapter.BaseAdapter
@@ -215,50 +216,101 @@ func (a *ConfigAdapter) UnmarshalPath(path []string, v interface{}) error {
 	return a.unmarshalFromMap(m.(map[string]any), v)
 }
 
-func (a *ConfigAdapter) unmarshalFromMap(m map[string]any, v interface{}) error {
-	if m == nil {
+func (a *ConfigAdapter) unmarshalFromMap(source map[string]any, destination interface{}) error {
+	if source == nil {
 		return errors.New("empty config")
 	}
-	if v == nil {
+	if destination == nil {
 		return errors.New("empty structure")
 	}
 
-	valueOfV := reflect.ValueOf(v).Elem()
-	typeOfV := valueOfV.Type()
+	valueOfDest := reflect.ValueOf(destination).Elem()
+	typeOfDest := valueOfDest.Type()
 
-	for i := 0; i < typeOfV.NumField(); i++ {
-		fieldTagString, ok := typeOfV.Field(i).Tag.Lookup(DefaultTagConfigName)
+	for i := 0; i < typeOfDest.NumField(); i++ {
+		fieldTagString, ok := typeOfDest.Field(i).Tag.Lookup(TagConfigName)
 
 		if !ok || fieldTagString == "" {
-			logrus.Debugf("Field '%s' has no tag = '%s'. Skip", typeOfV.Field(i).Name, DefaultTagConfigName)
+			logrus.Debugf("Field '%s' has no tag = '%s'. Skip", typeOfDest.Field(i).Name, TagConfigName)
 			continue
 		}
 
 		fieldTags := strings.Split(fieldTagString, ",")
 
-		fieldEnvVal, ok := m[fieldTags[0]]
+		sourceValue, ok := source[fieldTags[0]]
 
 		if !ok {
 			logrus.Debugf("Field '%s' is not in config. Skip", fieldTags[0])
 
-			if slices.Contains(fieldTags, DefaultTagConfigRequiredName) {
-				return fmt.Errorf("field '%s' is required", typeOfV.Field(i).Name)
+			if slices.Contains(fieldTags, TagConfigRequiredName) {
+				return fmt.Errorf("field '%s' is required", typeOfDest.Field(i).Name)
 			}
 
 			continue
 		}
 
-		if valueOfV.Field(i).CanSet() {
-			val := reflect.ValueOf(fieldEnvVal)
-			if valueOfV.Field(i).Kind() == reflect.Slice {
-				for _, sliceVal := range fieldEnvVal.([]interface{}) {
-					valueOfV.Field(i).Set(reflect.Append(valueOfV.Field(i), reflect.ValueOf(sliceVal)))
+		if valueOfDest.Field(i).CanSet() {
+			if valueOfDest.Field(i).Kind() == reflect.Slice {
+				for _, sliceVal := range sourceValue.([]interface{}) {
+					valueOfDest.Field(i).Set(reflect.Append(valueOfDest.Field(i), reflect.ValueOf(sliceVal)))
 				}
 				continue
 			}
-			valueOfV.Field(i).Set(val.Convert(valueOfV.Field(i).Type()))
+
+			sourceReflectValue := reflect.ValueOf(sourceValue)
+
+			if (valueOfDest.Field(i).Kind() == reflect.Int ||
+				valueOfDest.Field(i).Kind() == reflect.Int16 ||
+				valueOfDest.Field(i).Kind() == reflect.Int32 ||
+				valueOfDest.Field(i).Kind() == reflect.Int64 ||
+				valueOfDest.Field(i).Kind() == reflect.Int8) &&
+				sourceReflectValue.Kind() == reflect.String {
+				intVal, err := strconv.ParseInt(sourceReflectValue.String(), 10, int(valueOfDest.Field(i).Type().Size()))
+				if err != nil {
+					return err
+				}
+				valueOfDest.Field(i).Set(reflect.ValueOf(intVal))
+				continue
+			}
+
+			if (valueOfDest.Field(i).Kind() == reflect.Uint ||
+				valueOfDest.Field(i).Kind() == reflect.Uint16 ||
+				valueOfDest.Field(i).Kind() == reflect.Uint32 ||
+				valueOfDest.Field(i).Kind() == reflect.Uint64 ||
+				valueOfDest.Field(i).Kind() == reflect.Uint8) &&
+				sourceReflectValue.Kind() == reflect.String {
+				intVal, err := strconv.ParseUint(sourceReflectValue.String(), 10, int(valueOfDest.Field(i).Type().Size()))
+				if err != nil {
+					return err
+				}
+				valueOfDest.Field(i).Set(reflect.ValueOf(intVal))
+				continue
+			}
+
+			if valueOfDest.Field(i).Kind() == reflect.Bool &&
+				sourceReflectValue.Kind() == reflect.String {
+				intVal, err := strconv.ParseBool(sourceReflectValue.String())
+				if err != nil {
+					return err
+				}
+				valueOfDest.Field(i).Set(reflect.ValueOf(intVal))
+				continue
+			}
+
+			if (valueOfDest.Field(i).Kind() == reflect.Float32 ||
+				valueOfDest.Field(i).Kind() == reflect.Float64) &&
+				sourceReflectValue.Kind() == reflect.String {
+				intVal, err := strconv.ParseFloat(sourceReflectValue.String(), int(valueOfDest.Field(i).Type().Size()))
+				if err != nil {
+					return err
+				}
+				valueOfDest.Field(i).Set(reflect.ValueOf(intVal))
+				continue
+			}
+
+			valueOfDest.Field(i).Set(sourceReflectValue.Convert(valueOfDest.Field(i).Type()))
 		} else {
-			return fmt.Errorf("field '%s' cannot be set", typeOfV.Field(i).Name)
+			return fmt.Errorf("field '%s' cannot be set", typeOfDest.Field(i).Name)
 		}
 	}
 
