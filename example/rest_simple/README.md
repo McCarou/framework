@@ -34,7 +34,7 @@ func main() {
 }
 ```
 
-After the instance create a configuration for a REST service and create a new REST service that listens all adresses and port 8088. Name this service as you with ("service_rest" for example):
+After the instance create a configuration for a REST service and create a new REST service that listens all adresses and port 8088. Name this service as you wish ("service_rest" for example):
 
 ``` go
     // create a new REST worker
@@ -120,8 +120,9 @@ radian@radian:~$ curl 127.0.0.1:8088/
 Hello world!
 ```
 
-The answer has been received! If something goes wrong you can check [`main.go`](main.go) file or play with it in containers.
-<br><br>
+The answer has been received! If something goes wrong check [`main.go`](main.go) file or play with it in containers.
+
+<br>
 
 ## 2 Docker compose
 

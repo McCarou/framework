@@ -10,7 +10,7 @@ import (
 
 type RabbitMqConfig struct {
 	Host     string   `json:"host,omitempty" config:"host,required"`
-	Port     int16    `json:"port,omitempty" config:"port,required"`
+	Port     uint16   `json:"port,omitempty" config:"port,required"`
 	Username string   `json:"username,omitempty" config:"username"`
 	Password string   `json:"password,omitempty" config:"password"`
 	Exchange string   `json:"exchange,omitempty" config:"exchange"`
