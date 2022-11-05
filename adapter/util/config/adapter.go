@@ -80,11 +80,14 @@ func (a *ConfigAdapter) loadMap(data []string, prefix, delimKeyValue, delimParam
 			continue
 		}
 
-		removeChars := len(prefix) + len(delimParams)
+		param := arg[len(prefix)+len(delimParams):]
 
-		kv := strings.Split(arg[removeChars:], delimKeyValue)
-		keys := strings.Split(kv[0], delimParams)
-		if err := a.SetValue(keys, kv[1]); err != nil {
+		splitIndex := strings.Index(param, delimKeyValue)
+
+		kv := param[splitIndex+len(delimKeyValue):]
+		keys := strings.Split(param[:splitIndex], delimParams)
+
+		if err := a.SetValue(keys, kv); err != nil {
 			return err
 		}
 	}
@@ -151,7 +154,7 @@ func (a *ConfigAdapter) GetValue(path []string) (any, error) {
 			break
 		}
 
-		if _, ok := a.config[value]; !ok {
+		if _, ok := n[value]; !ok {
 			return nil, errors.New("path not valid")
 		}
 
@@ -183,7 +186,7 @@ func (a *ConfigAdapter) SetValue(path []string, val any) error {
 			break
 		}
 
-		if _, ok := a.config[value]; !ok {
+		if _, ok := n[value]; !ok {
 			n[value] = make(map[string]any)
 		}
 
@@ -199,11 +202,11 @@ func (a *ConfigAdapter) SetValue(path []string, val any) error {
 	return nil
 }
 
-func (a *ConfigAdapter) Unmarshal(v interface{}) error {
-	return a.unmarshalFromMap(a.config, v)
+func (a *ConfigAdapter) Unmarshal(destination interface{}, skipRequired bool) error {
+	return a.unmarshalFromMap(a.config, destination, skipRequired)
 }
 
-func (a *ConfigAdapter) UnmarshalPath(path []string, v interface{}) error {
+func (a *ConfigAdapter) UnmarshalPath(path []string, destination interface{}, skipRequired bool) error {
 	m, err := a.GetValue(path)
 	if err != nil {
 		return err
@@ -213,10 +216,10 @@ func (a *ConfigAdapter) UnmarshalPath(path []string, v interface{}) error {
 		return errors.New("invalid config")
 	}
 
-	return a.unmarshalFromMap(m.(map[string]any), v)
+	return a.unmarshalFromMap(m.(map[string]any), destination, skipRequired)
 }
 
-func (a *ConfigAdapter) unmarshalFromMap(source map[string]any, destination interface{}) error {
+func (a *ConfigAdapter) unmarshalFromMap(source map[string]any, destination interface{}, skipRequired bool) error {
 	if source == nil {
 		return errors.New("empty config")
 	}
@@ -242,7 +245,7 @@ func (a *ConfigAdapter) unmarshalFromMap(source map[string]any, destination inte
 		if !ok {
 			logrus.Debugf("Field '%s' is not in config. Skip", fieldTags[0])
 
-			if slices.Contains(fieldTags, TagConfigRequiredName) {
+			if !skipRequired && slices.Contains(fieldTags, TagConfigRequiredName) {
 				return fmt.Errorf("field '%s' is required", typeOfDest.Field(i).Name)
 			}
 
