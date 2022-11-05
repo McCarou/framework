@@ -14,11 +14,11 @@ import (
 type RabbitMqEventWorkerRegFunc func(d *amqp.Delivery, wc *worker.WorkerAdapters) error
 
 type RabbitMqConfig struct {
-	Host          string `json:"host,omitempty" config:"host,required"`
-	Port          int16  `json:"port,omitempty" config:"port,required"`
-	Username      string `json:"username,omitempty" config:"username,required"`
-	Password      string `json:"password,omitempty" config:"password,required"`
-	PrefetchCount int    `json:"prefetch_count,omitempty" config:"prefetch_count"`
+	Host          string `json:"Host,omitempty" config:"Host,required"`
+	Port          int16  `json:"Port,omitempty" config:"Port,required"`
+	Username      string `json:"Username,omitempty" config:"Username,required"`
+	Password      string `json:"Password,omitempty" config:"Password,required"`
+	PrefetchCount int    `json:"PrefetchCount,omitempty" config:"PrefetchCount"`
 }
 
 type RabbitMqEventWorker struct {

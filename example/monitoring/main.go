@@ -25,8 +25,8 @@ func main() {
 	workerRest := rest.NewRestServiceWorker("service_rest", workerConfig)
 
 	// create a new mnitoring worker
-	prometheus_config := &monitoring.MonitoringServiceConfig{Listen: "0.0.0.0", Port: 8087}
-	worker_prometheus := monitoring.NewMonitoringServiceWorker("service_monitoring", prometheus_config)
+	prometheusConfig := &monitoring.MonitoringServiceConfig{Listen: "0.0.0.0", Port: 8087}
+	workerPrometheus := monitoring.NewMonitoringServiceWorker("service_monitoring", prometheusConfig)
 
 	// create a route to the worker
 	workerRest.SetRoute("GET", "/", handlerMain)
@@ -36,8 +36,8 @@ func main() {
 
 	// append workers to the framework
 	radian.AddWorker(workerRest)
-	radian.AddWorker(worker_prometheus)
+	radian.AddWorker(workerPrometheus)
 
 	// run the workers
-	radian.Run([]string{workerRest.GetName(), worker_prometheus.GetName()})
+	radian.Run([]string{workerRest.GetName(), workerPrometheus.GetName()})
 }

@@ -9,8 +9,8 @@ import (
 )
 
 type SqlxConfig struct {
-	Driver           string `json:"driver" config:"driver,required"`
-	ConnectionString string `json:"connection_string,omitempty" config:"connection_string,required"`
+	Driver           string `json:"Driver" config:"Driver,required"`
+	ConnectionString string `json:"ConnectionString,omitempty" config:"ConnectionString,required"`
 }
 
 type SqlxAdapter struct {

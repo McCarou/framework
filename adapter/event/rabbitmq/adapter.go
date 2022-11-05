@@ -9,12 +9,12 @@ import (
 )
 
 type RabbitMqConfig struct {
-	Host     string   `json:"host,omitempty" config:"host,required"`
-	Port     uint16   `json:"port,omitempty" config:"port,required"`
-	Username string   `json:"username,omitempty" config:"username"`
-	Password string   `json:"password,omitempty" config:"password"`
-	Exchange string   `json:"exchange,omitempty" config:"exchange"`
-	Listen   []string `json:"listen,omitempty" config:"listen"`
+	Host     string   `json:"Host,omitempty" config:"Host,required"`
+	Port     uint16   `json:"Port,omitempty" config:"Port,required"`
+	Username string   `json:"Username,omitempty" config:"Username"`
+	Password string   `json:"Password,omitempty" config:"Password"`
+	Exchange string   `json:"Exchange,omitempty" config:"Exchange"`
+	Listen   []string `json:"Listen,omitempty" config:"Listen"`
 }
 
 type RabbitMqAdapter struct {

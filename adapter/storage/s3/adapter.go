@@ -15,12 +15,12 @@ import (
 )
 
 type AwsS3Config struct {
-	Endpoint          string `json:"endpoint,omitempty" config:"endpoint"`
-	AccessKeyID       string `json:"access_key_id,omitempty" config:"access_key_id"`
-	SecretAccessKey   string `json:"secret_access_key,omitempty" config:"secret_access_key"`
-	SessionToken      string `json:"session_token,omitempty" config:"session_token"`
-	Region            string `json:"region,omitempty" config:"region,required"`
-	SharedCredentials bool   `json:"shared_credentials,omitempty" config:"shared_credentials"`
+	Endpoint          string `json:"Endpoint,omitempty" config:"Endpoint"`
+	AccessKeyID       string `json:"AccessKeyID,omitempty" config:"AccessKeyID"`
+	SecretAccessKey   string `json:"SecretAccessKey,omitempty" config:"SecretAccessKey"`
+	SessionToken      string `json:"SessionToken,omitempty" config:"SessionToken"`
+	Region            string `json:"Region,omitempty" config:"Region,required"`
+	SharedCredentials bool   `json:"SharedCredentials,omitempty" config:"SharedCredentials"`
 }
 
 type AwsS3Adapter struct {

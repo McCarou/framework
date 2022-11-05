@@ -16,8 +16,8 @@ import (
 type RegFuncGrpcServiceWorker func(s *grpc.Server, wc *worker.WorkerAdapters)
 
 type GrpcConfig struct {
-	Listen string `json:"listen,omitempty" config:"listen,required"`
-	Port   int16  `json:"port,omitempty" config:"port,required"`
+	Listen string `json:"Listen,omitempty" config:"Listen,required"`
+	Port   int16  `json:"Port,omitempty" config:"Port,required"`
 }
 
 type GrpcServiceWorker struct {

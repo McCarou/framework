@@ -17,13 +17,13 @@ import (
 )
 
 type MongoDbConfig struct {
-	Hosts            []string `json:"hosts,omitempty" config:"hosts,required"`
-	Username         string   `json:"username,omitempty" config:"username"`
-	Password         string   `json:"password,omitempty" config:"password"`
-	ReplicaSet       string   `json:"replica_set,omitempty" config:"replica_set"`
-	DirectConnection bool     `json:"direct_connection,omitempty" config:"direct_connection"`
-	RootCA           string   `json:"root_ca,omitempty" config:"root_ca"`
-	AuthSource       string   `json:"auth_source,omitempty" config:"auth_source"`
+	Hosts            []string `json:"Hosts,omitempty" config:"Hosts,required"`
+	Username         string   `json:"Username,omitempty" config:"Username"`
+	Password         string   `json:"Password,omitempty" config:"Password"`
+	ReplicaSet       string   `json:"ReplicaSet,omitempty" config:"ReplicaSet"`
+	DirectConnection bool     `json:"DirectConnection,omitempty" config:"DirectConnection"`
+	RootCA           string   `json:"RootCA,omitempty" config:"RootCA"`
+	AuthSource       string   `json:"AuthSource,omitempty" config:"AuthSource"`
 }
 
 type MongoDbAdapter struct {
