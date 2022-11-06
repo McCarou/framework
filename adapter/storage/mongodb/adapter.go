@@ -66,7 +66,6 @@ func (a *MongoDbAdapter) Setup() (err error) {
 	}
 
 	a.client, err = mongo.Connect(context.TODO(), mongoOpt)
-
 	if err != nil {
 		logrus.WithField("adapter", a.GetName()).Error(err)
 	}
@@ -88,4 +87,8 @@ func (a *MongoDbAdapter) GetDatabase(name string) *mongo.Database {
 
 func (a *MongoDbAdapter) GetCollection(dbName string, collName string) *mongo.Collection {
 	return a.client.Database(dbName).Collection(collName)
+}
+
+func (a *MongoDbAdapter) CreateSession() (mongo.Session, error) {
+	return a.client.StartSession()
 }
