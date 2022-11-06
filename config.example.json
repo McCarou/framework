@@ -1,65 +1,64 @@
 {
-  "adapters": {
-    "postgresql": {
-      "type": "sqlx",
-      "enable": true,
-      "driver": "postgres",
-      "url": "host=localhost port=5432 user=postgres password=postgres dbname=db sslmode=disable",
-      "database": "postgres"
+  "Adapters": {
+    "Postgresql": {
+      "Type": "sqlx",
+      "Enable": true,
+      "Driver": "postgres",
+      "ConnectionString": "host=localhost port=5432 user=postgres password=postgres dbname=db sslmode=disable",
     },
-    "mongodb": {
-      "type": "mongodb",
-      "enable": true,
-      "hosts": [
+    "Mongodb": {
+      "Type": "mongodb",
+      "Enable": true,
+      "Hosts": [
         "localhost:27017"
       ],
-      "username": "username",
-      "password": "password",
-      "replica_set": "rs",
-      "direct_connection": true
+      "Username": "username",
+      "Password": "password",
+      "ReplicaSet": "rs",
+      "DirectConnection": true
     },
-    "arangodb": {
-      "type": "arangodb",
-      "enable": true,
-      "servers": [
+    "Arangodb": {
+      "Type": "arangodb",
+      "Enable": true,
+      "Servers": [
         "http://localhost:8529"
       ],
-      "username": "arango",
-      "password": "arango",
-      "database": "arango"
+      "Username": "arango",
+      "Password": "arango",
+      "Database": "arango"
     },
-    "rabbitmq": {
-      "type": "rabbitmq",
-      "enable": true,
-      "host": "localhost",
-      "port": 5672,
-      "username": "quest",
-      "password": "quest",
-      "exchange": "exchange",
-      "queue": "queue",
-      "listen": [
+    "Rabbitmq": {
+      "Type": "rabbitmq",
+      "Enable": true,
+      "Host": "localhost",
+      "Port": 5672,
+      "Username": "quest",
+      "Password": "quest",
+      "Exchange": "exchange",
+      "Queue": "queue",
+      "Listen": [
         "queue"
       ]
     },
-    "custom_adapter": {
-      "type": "custom",
-      "enable": true,
-      "host": "localhost",
-      "port": 1234
+    "CustomAdapter": {
+      "Type": "custom",
+      "Enable": true,
+      "Host": "localhost",
+      "Port": 1234
     }
   },
-  "workers": {
-    "grpc_service": {
-      "type": "grpc",
-      "enable": true,
-      "listen": "127.0.0.1",
-      "port": 5633
+  "Workers": {
+    "GrpcService": {
+      "Type": "grpc",
+      "Enable": true,
+      "Listen": "127.0.0.1",
+      "Port": 5633
     },
-    "rest_service": {
-      "type": "rest",
-      "enable": true,
-      "listen": "127.0.0.1",
-      "port": 8080
+    "RestService": {
+      "Type": "rest",
+      "Enable": true,
+      "Listen": "127.0.0.1",
+      "Port": 8080
     }
   }
 }

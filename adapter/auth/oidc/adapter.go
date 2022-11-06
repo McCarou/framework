@@ -18,14 +18,14 @@ import (
 )
 
 type OidcConfig struct {
-	OfflineMode     bool     `json:"offline_mode,omitempty" config:"offline_mode"`
-	ProviderUrl     string   `json:"provider_url" config:"provider_url,required"`
-	ClientId        string   `json:"client_id" config:"client_id,required"`
-	ClientSecret    string   `json:"client_secret" config:"client_secret"`
-	RedirectURL     string   `json:"redirect_url,omitempty" config:"redirect_url"`
-	Scopes          []string `json:"scopes,omitempty" config:"scopes"`
-	PublicKeys      []string `json:"public_keys,omitempty" config:"public_keys"`
-	SkipIssuerCheck bool     `json:"skip_issuer_check,omitempty" config:"skip_issuer_check"`
+	OfflineMode     bool     `json:"OfflineMode,omitempty" config:"OfflineMode"`
+	ProviderUrl     string   `json:"ProviderUrl" config:"ProviderUrl,required"`
+	ClientId        string   `json:"ClientId" config:"ClientId,required"`
+	ClientSecret    string   `json:"ClientSecret" config:"ClientSecret"`
+	RedirectURL     string   `json:"RedirectURL,omitempty" config:"RedirectURL"`
+	Scopes          []string `json:"Scopes,omitempty" config:"Scopes"`
+	PublicKeys      []string `json:"PublicKeys,omitempty" config:"PublicKeys"`
+	SkipIssuerCheck bool     `json:"SkipIssuerCheck,omitempty" config:"SkipIssuerCheck"`
 }
 
 type OidcAdapter struct {

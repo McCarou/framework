@@ -46,8 +46,8 @@ Create a monitoring worker on another port:
 
 ``` go
     // create a new mnitoring worker
-	prometheus_config := &monitoring.MonitoringServiceConfig{Listen: "0.0.0.0", Port: 8087}
-	worker_prometheus := monitoring.NewMonitoringServiceWorker("service_monitoring", prometheus_config)
+	prometheusConfig := &monitoring.MonitoringServiceConfig{Listen: "0.0.0.0", Port: 8087}
+	workerPrometheus := monitoring.NewMonitoringServiceWorker("service_monitoring", prometheusConfig)
 ```
 
 Declare a handler for a GET request with a root path (function will be implemented later):
@@ -69,14 +69,14 @@ Add the REST worker and the monitoring worker to the main framework instance:
 ``` go
     // append workers to the framework
 	radian.AddWorker(workerRest)
-	radian.AddWorker(worker_prometheus)
+	radian.AddWorker(workerPrometheus)
 ```
 
 Run the framework instance with the particular services:
 
 ``` go
     // run the workers
-	radian.Run([]string{workerRest.GetName(), worker_prometheus.GetName()})
+	radian.Run([]string{workerRest.GetName(), workerPrometheus.GetName()})
 ```
 
 Final step: declare and implement a handler function above the main fnction:

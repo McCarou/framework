@@ -12,11 +12,11 @@ import (
 )
 
 type ArangoDbConfig struct {
-	Servers            []string `json:"servers,omitempty" config:"servers,required"`
-	Username           string   `json:"username,omitempty" config:"username,required"`
-	Password           string   `json:"password,omitempty" config:"password"`
-	Database           string   `json:"database,omitempty" config:"database,required"`
-	InsecureSkipVerify bool     `json:"insecure_skip_verify,omitempty" config:"insecure_skip_verify"`
+	Servers            []string `json:"Servers,omitempty" config:"Servers,required"`
+	Username           string   `json:"Username,omitempty" config:"Username,required"`
+	Password           string   `json:"Password,omitempty" config:"Password"`
+	Database           string   `json:"Database,omitempty" config:"Database,required"`
+	InsecureSkipVerify bool     `json:"InsecureSkipVerify,omitempty" config:"InsecureSkipVerify"`
 }
 
 type ArangoDbAdapter struct {
