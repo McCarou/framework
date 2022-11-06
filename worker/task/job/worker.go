@@ -32,7 +32,7 @@ func (w *TaskJob) Run(ctx context.Context) (err error) {
 	err = w.Handler(ctx, w.Adapters)
 
 	if err != nil {
-		w.Logger.Infof("Job %s has been completed with error: %v", err)
+		w.Logger.Infof("Job %s has been completed with error: %v", w.GetName(), err)
 		return
 	}
 
