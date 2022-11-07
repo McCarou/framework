@@ -92,6 +92,16 @@ func (a *RabbitMqAdapter) DeclareQueue(name string, durable bool) (err error) {
 	return err
 }
 
+func (a *RabbitMqAdapter) BindQueue(exchange string, routingKey string, queue string) (err error) {
+	if err = a.checkConnection(); err != nil {
+		return
+	}
+
+	err = a.channel.QueueBind(queue, routingKey, exchange, false, nil)
+
+	return err
+}
+
 func (a *RabbitMqAdapter) PublishExchange(exchange string, key string, message []byte) (err error) {
 	if err = a.checkConnection(); err != nil {
 		return
