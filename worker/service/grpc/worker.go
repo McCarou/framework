@@ -9,6 +9,7 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/radianteam/framework/worker"
 	"google.golang.org/grpc"
 )
@@ -58,6 +59,10 @@ func (w *GrpcServiceWorker) Setup() {
 		grpc_logrus.UnaryServerInterceptor(w.Logger, opts...),
 	}
 
+	if w.IsMonitoringEnable() {
+		unaryInters = append(unaryInters, grpc.UnaryServerInterceptor(grpc_prometheus.UnaryServerInterceptor))
+	}
+
 	if w.errorHandler == nil {
 		unaryInters = append(unaryInters, grpc_recovery.UnaryServerInterceptor([]grpc_recovery.Option{grpc_recovery.WithRecoveryHandlerContext(w.errorHandler)}...))
 	}
@@ -65,6 +70,10 @@ func (w *GrpcServiceWorker) Setup() {
 	streamInters := []grpc.StreamServerInterceptor{
 		grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
 		grpc_logrus.StreamServerInterceptor(w.Logger, opts...),
+	}
+
+	if w.IsMonitoringEnable() {
+		streamInters = append(streamInters, grpc.StreamServerInterceptor(grpc_prometheus.StreamServerInterceptor))
 	}
 
 	if w.errorHandler == nil {
@@ -78,6 +87,10 @@ func (w *GrpcServiceWorker) Setup() {
 
 	for _, regFunc := range w.regFuncs {
 		regFunc(w.grpcServer, w.Adapters)
+	}
+
+	if w.IsMonitoringEnable() {
+		grpc_prometheus.Register(w.grpcServer)
 	}
 }
 
