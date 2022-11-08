@@ -8,6 +8,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/gin-gonic/gin v1.7.7
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
+	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/lib/pq v1.2.0
 	github.com/mattn/go-sqlite3 v1.14.6
