@@ -86,6 +86,28 @@ func (r *RadianFramework) Run(_workers []string) {
 	r.RunWithJobs([]string{}, _workers, []string{})
 }
 
+// Main framework loop. Runs all prejobs, workers and postjobs. The loop setups
+// adapters, captures the thread and wait for SIGINT or SIGTERM
+// signals. After termination runs postjobs and releases the thread.
+func (r *RadianFramework) RunAll() {
+	_preJobs := make([]string, 0, len(r.preJobs))
+	for k := range r.preJobs {
+		_preJobs = append(_preJobs, k)
+	}
+
+	_workers := make([]string, 0, len(r.workers))
+	for k := range r.workers {
+		_workers = append(_workers, k)
+	}
+
+	_postJobs := make([]string, 0, len(r.postJobs))
+	for k := range r.postJobs {
+		_postJobs = append(_postJobs, k)
+	}
+
+	r.RunWithJobs(_preJobs, _workers, _postJobs)
+}
+
 // Main framework loop. Use this instead of Run(). The loop
 // setups adapters, runs prejobs, captures the thread and wait
 // for SIGINT or SIGTERM signals. After termination runs
