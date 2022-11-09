@@ -85,5 +85,5 @@ func main() {
 	radian.AddWorker(workerMq)
 
 	// run the workers
-	radian.RunWithJobs([]string{initMqJob.GetName()}, []string{workerMq.GetName(), workerRest.GetName()}, []string{})
+	radian.RunAll()
 }

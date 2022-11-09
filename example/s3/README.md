@@ -13,7 +13,7 @@ module example
 go 1.19
 
 require (
-	github.com/radianteam/framework v0.2.9
+	github.com/radianteam/framework v0.3.0
 )
 ```
 

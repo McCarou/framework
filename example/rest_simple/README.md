@@ -71,7 +71,7 @@ Run the framework instance with the particular services:
 
 ``` go
     // run the worker
-	radian.Run([]string{workerRest.GetName()})
+	radian.RunAll()
 ```
 
 Final step: declare and implement a handler function above the main fnction:

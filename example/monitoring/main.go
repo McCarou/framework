@@ -39,5 +39,5 @@ func main() {
 	radian.AddWorker(workerPrometheus)
 
 	// run the workers
-	radian.Run([]string{workerRest.GetName(), workerPrometheus.GetName()})
+	radian.RunAll()
 }
