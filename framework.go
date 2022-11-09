@@ -8,6 +8,7 @@ package framework
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -24,11 +25,15 @@ type JobsMap map[string]*job.TaskJob
 
 // Main framework structure that holds worker list and global logger.
 type RadianFramework struct {
-	preJobs  JobsMap
-	postJobs JobsMap
+	preJobs      JobsMap
+	preJobNames  []string
+	postJobs     JobsMap
+	postJobNames []string
 
-	workers WorkersMap
-	logger  *logrus.Entry
+	workers     WorkersMap
+	workerNames []string
+
+	logger *logrus.Entry
 }
 
 // Function allocates structure with global JSON logger and an empty
@@ -48,34 +53,58 @@ func NewRadianFramework() *RadianFramework {
 // AddWorker registers a worker by name from Worker.GetName().
 // If the worker with the same name is already registred the
 // first one will be overwritten by the new one.
-func (r *RadianFramework) AddWorker(w worker.WorkerInterface) {
+func (r *RadianFramework) AddWorker(w worker.WorkerInterface) error {
+	if _, ok := r.workers[w.GetName()]; ok {
+		return fmt.Errorf("worker with name %s has been already registered", w.GetName())
+	}
+
 	if r.workers == nil {
 		r.workers = make(WorkersMap)
 	}
 
 	r.workers[w.GetName()] = w
+
+	r.workerNames = append(r.workerNames, w.GetName())
+
+	return nil
 }
 
 // AddPreJob registers a list of functions that will be executed
 // before starting the main loop. Use it to get tokens, make
 // migrations, etc.
-func (r *RadianFramework) AddPreJob(t *job.TaskJob) {
+func (r *RadianFramework) AddPreJob(t *job.TaskJob) error {
+	if _, ok := r.preJobs[t.GetName()]; ok {
+		return fmt.Errorf("prejob with name %s has been already registered", t.GetName())
+	}
+
 	if r.preJobs == nil {
 		r.preJobs = make(JobsMap)
 	}
 
 	r.preJobs[t.GetName()] = t
+
+	r.preJobNames = append(r.preJobNames, t.GetName())
+
+	return nil
 }
 
 // AddPostJob registers a list of functions that will be executed
 // after finishing the main loop. Use it to invalidate tokens, make
 // termination signals, etc.
-func (r *RadianFramework) AddPostJob(t *job.TaskJob) {
+func (r *RadianFramework) AddPostJob(t *job.TaskJob) error {
+	if _, ok := r.postJobs[t.GetName()]; ok {
+		return fmt.Errorf("postjob with name %s has been already registered", t.GetName())
+	}
+
 	if r.postJobs == nil {
 		r.postJobs = make(JobsMap)
 	}
 
 	r.postJobs[t.GetName()] = t
+
+	r.postJobNames = append(r.postJobNames, t.GetName())
+
+	return nil
 }
 
 // Main framework loop. Left for backward compatibility. Doesn't
@@ -90,22 +119,7 @@ func (r *RadianFramework) Run(_workers []string) {
 // adapters, captures the thread and wait for SIGINT or SIGTERM
 // signals. After termination runs postjobs and releases the thread.
 func (r *RadianFramework) RunAll() {
-	_preJobs := make([]string, 0, len(r.preJobs))
-	for k := range r.preJobs {
-		_preJobs = append(_preJobs, k)
-	}
-
-	_workers := make([]string, 0, len(r.workers))
-	for k := range r.workers {
-		_workers = append(_workers, k)
-	}
-
-	_postJobs := make([]string, 0, len(r.postJobs))
-	for k := range r.postJobs {
-		_postJobs = append(_postJobs, k)
-	}
-
-	r.RunWithJobs(_preJobs, _workers, _postJobs)
+	r.RunWithJobs(r.preJobNames, r.workerNames, r.postJobNames)
 }
 
 // Main framework loop. Use this instead of Run(). The loop
