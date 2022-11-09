@@ -29,8 +29,8 @@ Create a main function and create an instance of the radian framework:
 
 ``` go
 func main() {
-	// create a new framework instance
-	radian := framework.NewRadianFramework()
+	// create a new microservice instance
+	radian := framework.NewRadianMicroservice()
 }
 ```
 

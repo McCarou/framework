@@ -48,8 +48,8 @@ func handlerSend(c *gin.Context, wc *worker.WorkerAdapters) {
 }
 
 func main() {
-	// create a new framework instance
-	radian := framework.NewRadianFramework()
+	// create a new microservice instance
+	radian := framework.NewRadianMicroservice("main")
 
 	// create init prejob to declare a queue
 	initMqJob := job.NewTaskJob("init_mq", InitRabbitMqExchange)

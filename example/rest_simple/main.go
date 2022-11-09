@@ -27,8 +27,8 @@ func handlerMain(c *gin.Context, wc *worker.WorkerAdapters) {
 }
 
 func main() {
-	// create a new framework instance
-	radian := framework.NewRadianFramework()
+	// create a new microservice instance
+	radian := framework.NewRadianMicroservice("main")
 
 	// create a new REST worker
 	workerConfig := &rest.RestConfig{Listen: "0.0.0.0", Port: 8088}
