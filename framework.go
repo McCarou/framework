@@ -11,9 +11,12 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
+	"github.com/jessevdk/go-flags"
+	"github.com/radianteam/framework/adapter/util/config"
 	"github.com/sirupsen/logrus"
 )
 
@@ -23,6 +26,10 @@ type MicroserviceMap map[string]*RadianMicroservice
 type RadianServiceManager struct {
 	microservices     MicroserviceMap
 	microserviceNames []string
+
+	desiredServiceNames []string
+
+	mainConfig *config.ConfigAdapter
 
 	logger *logrus.Entry
 }
@@ -37,6 +44,7 @@ func NewRadianServiceManager() *RadianServiceManager {
 
 	return &RadianServiceManager{
 		microservices: mmap,
+		mainConfig:    config.NewConfigAdapter("Config"),
 		logger:        logger.WithField("manager", "framework"),
 	}
 }
@@ -58,6 +66,41 @@ func (rsm *RadianServiceManager) AddMicroservice(ms *RadianMicroservice) error {
 	rsm.microserviceNames = append(rsm.microserviceNames, ms.GetName())
 
 	return nil
+}
+
+func (rsm *RadianServiceManager) SetupFromCommandLine() (err error) {
+	logrus.SetFormatter(&logrus.JSONFormatter{})
+
+	var argOpts struct {
+		Config string `short:"c" long:"config" description:"A configuration file name"`
+		Mode   string `short:"m" long:"mode" description:"all, monolith, empty string or service names comma separated"`
+	}
+
+	_, err = flags.ParseArgs(&argOpts, os.Args)
+
+	if err != nil {
+		return
+	}
+
+	if argOpts.Mode == "" || argOpts.Mode == "monolith" {
+		argOpts.Mode = "all"
+	}
+
+	names := strings.Split(argOpts.Mode, ",")
+
+	if len(names) > 1 {
+		rsm.desiredServiceNames = names
+	}
+
+	if argOpts.Config != "" {
+		logrus.Infof("Loading configuration from file: %s", argOpts.Config)
+
+		if err := rsm.mainConfig.LoadFromFileJson(argOpts.Config); err != nil {
+			logrus.Fatalf("File configuration loading error: %v", err)
+		}
+	}
+
+	return
 }
 
 // Main framework loop. Runs all microservices. The loop setups
