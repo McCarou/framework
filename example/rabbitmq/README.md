@@ -13,7 +13,7 @@ module example
 go 1.19
 
 require (
-	github.com/radianteam/framework v0.2.8
+	github.com/radianteam/framework v0.3.0
 )
 ```
 
@@ -29,8 +29,8 @@ Create a main function and create an instance of the radian framework:
 
 ``` go
 func main() {
-	// create a new framework instance
-	radian := framework.NewRadianFramework()
+	// create a new microservice instance
+	radian := framework.NewRadianMicroservice()
 }
 ```
 
@@ -142,7 +142,7 @@ Run the framework instance with workers and tasks:
 
 ``` go
     // run the workers
-	radian.RunWithJobs([]string{initMqJob.GetName()}, []string{workerMq.GetName(), workerRest.GetName()}, []string{})
+	radian.RunAll()
 ```
 <br>
 
