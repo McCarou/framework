@@ -103,20 +103,38 @@ func (rsm *RadianServiceManager) SetupFromCommandLine() (err error) {
 		return
 	}
 
-	names := strings.Split(argOpts.Mode, ",")
+	return rsm.setupInternal(argOpts.Mode, argOpts.Config)
+}
 
-	if argOpts.Mode == "" || argOpts.Mode == "monolith" || argOpts.Mode == "all" {
-		argOpts.Mode = "all"
+func (rsm *RadianServiceManager) SetupFromEnv(prefix string) (err error) {
+	logrus.SetFormatter(&logrus.JSONFormatter{})
+
+	confAdapter := config.NewConfigAdapter("temp")
+
+	err = confAdapter.LoadFromEnv(prefix)
+
+	if err != nil {
+		return
+	}
+
+	return rsm.setupInternal(confAdapter.GetStringOrDefault([]string{"Mode"}, ""), confAdapter.GetStringOrDefault([]string{"Config"}, ""))
+}
+
+func (rsm *RadianServiceManager) setupInternal(mode string, _config string) (err error) {
+	names := strings.Split(mode, ",")
+
+	if mode == "" || mode == "monolith" || mode == "all" {
+		mode = "all"
 	} else if len(names) > 1 {
 		rsm.desiredServiceNames = names
 	} else {
-		rsm.desiredServiceNames = []string{argOpts.Mode}
+		rsm.desiredServiceNames = []string{mode}
 	}
 
-	if argOpts.Config != "" {
-		logrus.Infof("Loading configuration from file: %s", argOpts.Config)
+	if _config != "" {
+		logrus.Infof("Loading configuration from file: %s", _config)
 
-		err = rsm.mainConfig.LoadFromFileJson(argOpts.Config)
+		err = rsm.mainConfig.LoadFromFileJson(_config)
 
 		if err != nil {
 			return
