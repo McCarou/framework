@@ -112,6 +112,16 @@ func (a *ConfigAdapter) GetAdapter(path []string) (*ConfigAdapter, error) {
 	return ac, nil
 }
 
+func (a *ConfigAdapter) GetAdapterOrNil(path []string) *ConfigAdapter {
+	adp, err := a.GetAdapter(path)
+
+	if err != nil {
+		return nil
+	}
+
+	return adp
+}
+
 func (a *ConfigAdapter) GetValueOrDefault(path []string, defaultValue any) any {
 	result, err := a.GetValue(path)
 
