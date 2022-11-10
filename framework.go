@@ -134,6 +134,12 @@ func (rsm *RadianServiceManager) RunAll() {
 }
 
 func (rsm *RadianServiceManager) RunDesired() {
+	if len(rsm.desiredServiceNames) == 0 {
+		rsm.RunAll()
+
+		return
+	}
+
 	rsm.Run(rsm.desiredServiceNames)
 }
 

@@ -1,7 +1,7 @@
 package worker
 
 import (
-	"errors"
+	"fmt"
 
 	"github.com/radianteam/framework/adapter"
 )
@@ -60,5 +60,5 @@ func (w *WorkerAdapters) Get(name string) (adapter.AdapterInterface, error) {
 		return val, nil
 	}
 
-	return nil, errors.New("adapter is not found")
+	return nil, fmt.Errorf("adapter %s is not found", name)
 }
