@@ -105,7 +105,7 @@ func (rsm *RadianServiceManager) SetupFromCommandLine() (err error) {
 
 	names := strings.Split(argOpts.Mode, ",")
 
-	if argOpts.Mode == "" || argOpts.Mode == "monolith" {
+	if argOpts.Mode == "" || argOpts.Mode == "monolith" || argOpts.Mode == "all" {
 		argOpts.Mode = "all"
 	} else if len(names) > 1 {
 		rsm.desiredServiceNames = names
