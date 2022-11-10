@@ -161,7 +161,7 @@ func (rsm *RadianServiceManager) Run(_microservices []string) {
 			ms, err := rsm.microserviceCreators[serviceName](serviceName, rsm.mainConfig.GetAdapterOrNil([]string{serviceName}))
 
 			if err != nil {
-				rsm.logger.Fatalf("worker with name %s created with error %v", serviceName, err)
+				rsm.logger.Fatalf("worker with name %s created with the error: %v", serviceName, err)
 			}
 
 			rsm.microservices[serviceName] = ms
