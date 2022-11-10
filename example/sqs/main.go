@@ -11,7 +11,6 @@ import (
 	"github.com/radianteam/framework/worker/service/rest"
 	"io"
 	"net/http"
-	"strconv"
 )
 
 const (
@@ -21,94 +20,82 @@ const (
 )
 
 func handlerRestIn(c *gin.Context, wc *worker.WorkerAdapters) {
+	// receive message from POST request
 	messageBytes, _ := io.ReadAll(c.Request.Body)
 	messageString := string(messageBytes)
 
+	// get sqs adapter from all running adapters
 	adapter, _ := wc.Get(sqsAdapter)
 	adapterSqs := adapter.(*sqs_adapter.SqsAdapter)
 
-	getQueueUrlInput := &sqs.GetQueueUrlInput{QueueName: aws.String(inQueue)}
-	queueUrl, _ := adapterSqs.GetQueueUrl(getQueueUrlInput)
-
-	sendMessageInput := &sqs.SendMessageInput{QueueUrl: aws.String(queueUrl), MessageBody: aws.String(messageString)}
-	_ = adapterSqs.Publish(sendMessageInput)
+	// publish to the input queue
+	adapterSqs.Publish(inQueue, messageString)
 }
 
-func fromInToOutQueueHandler(d *sqs.Message, wc *worker.WorkerAdapters) error {
+func fromInToOutQueueHandler(message *sqs.Message, wc *worker.WorkerAdapters) error {
+	// get sqs adapter from all running adapters
 	adapter, _ := wc.Get(sqsAdapter)
-
 	adapterSqs := adapter.(*sqs_adapter.SqsAdapter)
 
-	getQueueUrlInput := &sqs.GetQueueUrlInput{QueueName: aws.String(outQueue)}
-	queueUrl, _ := adapterSqs.GetQueueUrl(getQueueUrlInput)
-
-	sendMessageInput := &sqs.SendMessageInput{QueueUrl: aws.String(queueUrl), MessageBody: d.Body}
-	_ = adapterSqs.Publish(sendMessageInput)
+	// publish to the output queue
+	adapterSqs.Publish(outQueue, aws.StringValue(message.Body))
 
 	return nil
 }
 
 func handlerRestOut(c *gin.Context, wc *worker.WorkerAdapters) {
+	// get sqs adapter from all running adapters
 	adapter, _ := wc.Get(sqsAdapter)
-
 	adapterSqs := adapter.(*sqs_adapter.SqsAdapter)
 
-	getQueueUrlInput := &sqs.GetQueueUrlInput{QueueName: aws.String(outQueue)}
-	queueUrl, _ := adapterSqs.GetQueueUrl(getQueueUrlInput)
+	// read from the output queue
+	result, _ := adapterSqs.Consume(outQueue)
 
-	recvMessageInput := &sqs.ReceiveMessageInput{QueueUrl: aws.String(queueUrl)}
-	result, _ := adapterSqs.Consume(recvMessageInput)
+	// remove message after consuming
+	adapterSqs.DeleteMessage(outQueue, *result[0].ReceiptHandle)
 
-	deleteMessageInput := &sqs.DeleteMessageInput{QueueUrl: aws.String(queueUrl), ReceiptHandle: result[0].ReceiptHandle}
-	_ = adapterSqs.DeleteMessage(deleteMessageInput)
-
+	// return response
 	c.String(http.StatusOK, aws.StringValue(result[0].Body))
 }
 
 func main() {
+	// create a new framework instance
+	radian := framework.NewRadianMicroservice("sqs-example")
+
+	// setup sqs adapter
 	adapterSqsConfig := &sqs_adapter.SqsConfig{
-		Host:            "localstack",
-		Port:            4566,
-		AccessKeyId:     "test_key_id",
-		SecretAccessKey: "test_secret_access_key",
-		SessionToken:    "test_token",
-		Region:          "us-east-2",
-		PollingTime:     10,
+		Endpoint:            "http://localstack:4566",
+		AccessKeyID:         "test_key_id",
+		SecretAccessKey:     "test_secret_access_key",
+		SessionToken:        "test_token",
+		Region:              "us-east-2",
+		MaxNumberOfMessages: 1,
+		WaitTimeSeconds:     1,
+		VisibilityTimeout:   1,
 	}
 	adapterSqs := sqs_adapter.NewSqsAdapter(sqsAdapter, adapterSqsConfig)
-	_ = adapterSqs.Setup()
+	adapterSqs.Setup()
 
-	createInQueueInput := &sqs.CreateQueueInput{QueueName: aws.String(inQueue),
-		Attributes: aws.StringMap(map[string]string{"ReceiveMessageWaitTimeSeconds": strconv.Itoa(adapterSqsConfig.PollingTime)})}
-	_ = adapterSqs.CreateQueue(createInQueueInput)
+	// create queue
+	adapterSqs.CreateQueue(inQueue)
+	adapterSqs.CreateQueue(outQueue)
 
-	createOutQueueInput := &sqs.CreateQueueInput{QueueName: aws.String(outQueue),
-		Attributes: aws.StringMap(map[string]string{"ReceiveMessageWaitTimeSeconds": strconv.Itoa(adapterSqsConfig.PollingTime)})}
-	_ = adapterSqs.CreateQueue(createOutQueueInput)
-
-	radian := framework.NewRadianFramework()
-
+	// setup rest worker
 	restConfig := &rest.RestConfig{Listen: "0.0.0.0", Port: 8080}
-	work_est := rest.NewRestServiceWorker("service_rest", restConfig)
+	workerRest := rest.NewRestServiceWorker("service_rest", restConfig)
 
-	work_est.SetRoute("POST", "/", handlerRestIn)
-	work_est.SetRoute("GET", "/", handlerRestOut)
-	work_est.SetAdapter(adapterSqs)
+	workerRest.SetRoute("POST", "/", handlerRestIn)
+	workerRest.SetRoute("GET", "/", handlerRestOut)
+	workerRest.SetAdapter(adapterSqs)
 
-	workerConfig := &sqs_worker.SqsConfig{
-		Host:            "localstack",
-		Port:            4566,
-		AccessKeyId:     "test_key_id",
-		SecretAccessKey: "test_secret_access_key",
-		SessionToken:    "test_token",
-		Region:          "us-east-2",
-	}
-	workerSqs := sqs_worker.NewSqsEventsWorker("service_sqs", workerConfig)
+	// setup sqs worker
+	workerSqs := sqs_worker.NewSqsEventsWorker("service_sqs", adapterSqsConfig)
 	workerSqs.SetEvent(inQueue, fromInToOutQueueHandler)
 	workerSqs.SetAdapter(adapterSqs)
 
 	radian.AddWorker(workerSqs)
-	radian.AddWorker(work_est)
+	radian.AddWorker(workerRest)
 
-	radian.Run([]string{"service_rest", "service_sqs"})
+	// run the framework
+	radian.RunAll()
 }
