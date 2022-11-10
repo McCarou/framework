@@ -133,6 +133,10 @@ func (rsm *RadianServiceManager) RunAll() {
 	rsm.Run(rsm.microserviceNames)
 }
 
+func (rsm *RadianServiceManager) RunDesired() {
+	rsm.Run(rsm.desiredServiceNames)
+}
+
 // Main framework loop. The loop runs microservices in different
 // goroutines, captures the thread and wait for SIGINT or SIGTERM
 // signals. After termination releases the thread.
@@ -144,7 +148,17 @@ func (rsm *RadianServiceManager) Run(_microservices []string) {
 	// check microservice names
 	for _, serviceName := range _microservices {
 		if _, ok := rsm.microservices[serviceName]; !ok {
-			rsm.logger.Fatalf("worker with name %s is not found", serviceName)
+			if _, ok := rsm.microserviceCreators[serviceName]; !ok {
+				rsm.logger.Fatalf("worker with name %s is not found", serviceName)
+			}
+
+			ms, err := rsm.microserviceCreators[serviceName](serviceName, rsm.mainConfig.GetAdapterOrNil([]string{serviceName}))
+
+			if err != nil {
+				rsm.logger.Fatalf("worker with name %s created with error %v", serviceName, err)
+			}
+
+			rsm.microservices[serviceName] = ms
 		}
 	}
 
