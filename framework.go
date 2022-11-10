@@ -18,14 +18,19 @@ import (
 	"github.com/jessevdk/go-flags"
 	"github.com/radianteam/framework/adapter/util/config"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 )
 
 type MicroserviceMap map[string]*RadianMicroservice
+
+type MicroserviceCreatorFunc func(name string, configAdapter *config.ConfigAdapter) (*RadianMicroservice, error)
 
 // Microservice orchestrator's structure that holds microservices.
 type RadianServiceManager struct {
 	microservices     MicroserviceMap
 	microserviceNames []string
+
+	microserviceCreators map[string]MicroserviceCreatorFunc
 
 	desiredServiceNames []string
 
@@ -53,7 +58,7 @@ func NewRadianServiceManager() *RadianServiceManager {
 // Microservice.GetName(). If a microservice with the same
 // name is already registred an error will be thrown.
 func (rsm *RadianServiceManager) AddMicroservice(ms *RadianMicroservice) error {
-	if _, ok := rsm.microservices[ms.GetName()]; ok {
+	if slices.Contains(rsm.microserviceNames, ms.GetName()) {
 		return fmt.Errorf("microservice with name %s has been already registered", ms.GetName())
 	}
 
@@ -64,6 +69,22 @@ func (rsm *RadianServiceManager) AddMicroservice(ms *RadianMicroservice) error {
 	rsm.microservices[ms.GetName()] = ms
 
 	rsm.microserviceNames = append(rsm.microserviceNames, ms.GetName())
+
+	return nil
+}
+
+func (rsm *RadianServiceManager) AddMicroserviceCreator(name string, creator MicroserviceCreatorFunc) error {
+	if slices.Contains(rsm.microserviceNames, name) {
+		return fmt.Errorf("microservice with name %s has been already registered", name)
+	}
+
+	if rsm.microserviceCreators == nil {
+		rsm.microserviceCreators = make(map[string]MicroserviceCreatorFunc)
+	}
+
+	rsm.microserviceCreators[name] = creator
+
+	rsm.microserviceNames = append(rsm.microserviceNames, name)
 
 	return nil
 }
@@ -82,21 +103,23 @@ func (rsm *RadianServiceManager) SetupFromCommandLine() (err error) {
 		return
 	}
 
-	if argOpts.Mode == "" || argOpts.Mode == "monolith" {
-		argOpts.Mode = "all"
-	}
-
 	names := strings.Split(argOpts.Mode, ",")
 
-	if len(names) > 1 {
+	if argOpts.Mode == "" || argOpts.Mode == "monolith" {
+		argOpts.Mode = "all"
+	} else if len(names) > 1 {
 		rsm.desiredServiceNames = names
+	} else {
+		rsm.desiredServiceNames = []string{argOpts.Mode}
 	}
 
 	if argOpts.Config != "" {
 		logrus.Infof("Loading configuration from file: %s", argOpts.Config)
 
-		if err := rsm.mainConfig.LoadFromFileJson(argOpts.Config); err != nil {
-			logrus.Fatalf("File configuration loading error: %v", err)
+		err = rsm.mainConfig.LoadFromFileJson(argOpts.Config)
+
+		if err != nil {
+			return
 		}
 	}
 
