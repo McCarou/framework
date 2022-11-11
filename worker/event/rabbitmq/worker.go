@@ -96,7 +96,7 @@ func (w *RabbitMqEventWorker) Run() {
 
 				if !ok {
 					w.Logger.Errorf("Queue %s doesn't have a handler for %s routing key", name, message.RoutingKey)
-					message.Acknowledger.Nack(message.DeliveryTag, false, false)
+					message.Acknowledger.Nack(message.DeliveryTag, false, true) // TODO: remove hardcode
 
 					continue
 				}
@@ -110,7 +110,7 @@ func (w *RabbitMqEventWorker) Run() {
 
 				if err != nil {
 					w.Logger.Errorf("Queue %s routing key %s failed to proceed the message with delivery tag %d ", name, message.RoutingKey, message.DeliveryTag)
-					message.Nack(true, false)
+					message.Nack(true, true) // TODO: remove hardcode
 
 					continue
 				}
