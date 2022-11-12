@@ -1,6 +1,6 @@
 # Nanoservice framework Radian
 
-The framework is designed to develop backend business applications based on SOA architecture. The framework supported microservices and monolith architecture.
+The framework is designed to develop backend business applications based on SOA architecture. The framework supports microservice and monolith architecture.
 
 DISCLAIMER: The project is at an early stage of development and is recommended for use with great caution. The project is open for general download due to the fact that the author needs it to support his current projects.
 
@@ -206,6 +206,7 @@ This tasks are not for migrations! You can use them for it but it is better to d
 | REST | Service | Service based on [Gin](github.com/gin-gonic/gin) REST library |
 | GRPC | Service | Service based on vanilla [GRPC](google.golang.org/grpc) library |
 | RabbitMQ | Event | Event worker based on [RabbitMQ](adapter/event/rabbitmq) framework adapter |
+| AWS SQS | Event | Event worker based on [SQS](adapter/event/sqs) framework adapter |
 | Schedule | Periodic | Scheduler for periodic tasks based on [Chrono](github.com/procyon-projects/chrono) library |
 | Job | Permament | Task worker for permament workers and one-time operations in pretasks and posttasks |
 | Monitoring | Special | REST Service based on [Gin](github.com/gin-gonic/gin) library and [Prometheus Go](https://github.com/prometheus/client_golang/) libary with /metrics endpoint for prometheus scraper |
@@ -220,6 +221,7 @@ This tasks are not for migrations! You can use them for it but it is better to d
 | MongoDB | Storage | Database adapter based on [MongoDB](go.mongodb.org/mongo-driver/mongo) driver |
 | ArangoDB | Storage | Gaph database adapter based on [ArangoDB](github.com/arangodb/go-driver) driver |
 | AWS S3 | Storage | Object storage adapter implementing S3 protocol. Based on [AWS](github.com/aws/aws-sdk-go) SDK |
+| AWS SQS | Event | Event adapter implementing SQS protocol. Based on [AWS](github.com/aws/aws-sdk-go) SDK |
 | RabbitMQ | Event | Event adapter based on [AMQP](github.com/streadway/amqp) library |
 | OIDC | Auth | Auth adapter implementing OpenID connect protocol. Based on [go-oidc](https://github.com/coreos/go-oidc/) library. Supports sync (introspect) and offline (public keys) checking |
 <br>
