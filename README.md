@@ -1,3 +1,7 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/radianteam/framework)](https://goreportcard.com/report/github.com/radianteam/framework)
+[![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
+[![Go.Dev reference](https://img.shields.io/badge/go.dev-reference-blue?logo=go&logoColor=white)](https://pkg.go.dev/github.com/radianteam/framework#section-documentation)
+
 # Nanoservice framework Radian
 
 The framework is designed to develop backend business applications based on SOA architecture. The framework supports microservice and monolith architecture.
