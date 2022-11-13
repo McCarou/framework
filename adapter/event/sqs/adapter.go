@@ -8,7 +8,7 @@ import (
 	"github.com/radianteam/framework/adapter"
 )
 
-type SqsConfig struct {
+type AwsSqsConfig struct {
 	Endpoint            string `json:"Endpoint,omitempty,omitempty" config:"Endpoint"`
 	Region              string `json:"Region,omitempty" config:"Region,required"`
 	AccessKeyID         string `json:"AwsAccessKeyID,omitempty" config:"AwsAccessKeyID"`
@@ -20,20 +20,20 @@ type SqsConfig struct {
 	SharedCredentials   bool   `json:"SharedCredentials,omitempty" config:"SharedCredentials"`
 }
 
-type SqsAdapter struct {
+type AwsSqsAdapter struct {
 	*adapter.BaseAdapter
 
-	config *SqsConfig
+	config *AwsSqsConfig
 
 	sess   *session.Session
 	client *sqs.SQS
 }
 
-func NewSqsAdapter(name string, config *SqsConfig) *SqsAdapter {
-	return &SqsAdapter{BaseAdapter: adapter.NewBaseAdapter(name), config: config}
+func NewAwsSqsAdapter(name string, config *AwsSqsConfig) *AwsSqsAdapter {
+	return &AwsSqsAdapter{BaseAdapter: adapter.NewBaseAdapter(name), config: config}
 }
 
-func (a *SqsAdapter) Setup() (err error) {
+func (a *AwsSqsAdapter) Setup() (err error) {
 	endpoint := a.config.Endpoint
 	cfg := aws.Config{
 		Region:   aws.String(a.config.Region),
@@ -50,18 +50,18 @@ func (a *SqsAdapter) Setup() (err error) {
 	return
 }
 
-func (a *SqsAdapter) Close() error {
+func (a *AwsSqsAdapter) Close() error {
 	return nil
 }
 
-func (a *SqsAdapter) CreateQueue(qName string) (err error) {
+func (a *AwsSqsAdapter) CreateQueue(qName string) (err error) {
 	createQueueInput := &sqs.CreateQueueInput{QueueName: aws.String(qName)}
 	_, err = a.client.CreateQueue(createQueueInput)
 
 	return
 }
 
-func (a *SqsAdapter) ListQueues() (*[]*string, error) {
+func (a *AwsSqsAdapter) ListQueues() (*[]*string, error) {
 	result, err := a.client.ListQueues(&sqs.ListQueuesInput{})
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func (a *SqsAdapter) ListQueues() (*[]*string, error) {
 	return &result.QueueUrls, nil
 }
 
-func (a *SqsAdapter) getQueueUrl(qName string) (string, error) {
+func (a *AwsSqsAdapter) getQueueUrl(qName string) (string, error) {
 	getQueueUrlInput := &sqs.GetQueueUrlInput{QueueName: aws.String(qName)}
 	result, err := a.client.GetQueueUrl(getQueueUrlInput)
 	if err != nil {
@@ -80,7 +80,7 @@ func (a *SqsAdapter) getQueueUrl(qName string) (string, error) {
 	return aws.StringValue(result.QueueUrl), nil
 }
 
-func (a *SqsAdapter) DeleteQueue(qName string) (err error) {
+func (a *AwsSqsAdapter) DeleteQueue(qName string) (err error) {
 	queueUrl, err := a.getQueueUrl(qName)
 	if err != nil {
 		return
@@ -92,7 +92,7 @@ func (a *SqsAdapter) DeleteQueue(qName string) (err error) {
 	return
 }
 
-func (a *SqsAdapter) DeleteMessage(qName, receiptHandle string) (err error) {
+func (a *AwsSqsAdapter) DeleteMessage(qName, receiptHandle string) (err error) {
 	queueUrl, err := a.getQueueUrl(qName)
 	if err != nil {
 		return
@@ -104,7 +104,7 @@ func (a *SqsAdapter) DeleteMessage(qName, receiptHandle string) (err error) {
 	return
 }
 
-func (a *SqsAdapter) Publish(qName, message string) (err error) {
+func (a *AwsSqsAdapter) Publish(qName, message string) (err error) {
 	queueUrl, err := a.getQueueUrl(qName)
 	if err != nil {
 		return
@@ -116,7 +116,7 @@ func (a *SqsAdapter) Publish(qName, message string) (err error) {
 	return
 }
 
-func (a *SqsAdapter) Consume(queueUrl string) ([]*sqs.Message, error) {
+func (a *AwsSqsAdapter) Consume(queueUrl string) ([]*sqs.Message, error) {
 	receiveMessageInput := &sqs.ReceiveMessageInput{QueueUrl: aws.String(queueUrl)}
 	if a.config.MaxNumberOfMessages != 0 {
 		receiveMessageInput.MaxNumberOfMessages = aws.Int64(a.config.MaxNumberOfMessages)
