@@ -11,40 +11,40 @@ import (
 
 const RetryConsumeTimeoutMs = 10000
 
-type SqsWorkerRegFunc func(d *sqs.Message, wc *worker.WorkerAdapters) error
+type AwsSqsWorkerRegFunc func(d *sqs.Message, wc *worker.WorkerAdapters) error
 
-type SqsEventsWorker struct {
+type AwsSqsEventsWorker struct {
 	*worker.BaseWorker
 
-	config *sqs_adapter.SqsConfig
+	config *sqs_adapter.AwsSqsConfig
 
 	mutex       sync.Mutex
 	waitChan    chan struct{}
 	stopPolling bool
 
-	handlers map[string]SqsWorkerRegFunc
+	handlers map[string]AwsSqsWorkerRegFunc
 }
 
-func NewSqsEventsWorker(name string, config *sqs_adapter.SqsConfig) *SqsEventsWorker {
-	handlers := make(map[string]SqsWorkerRegFunc)
+func NewAwsSqsEventsWorker(name string, config *sqs_adapter.AwsSqsConfig) *AwsSqsEventsWorker {
+	handlers := make(map[string]AwsSqsWorkerRegFunc)
 
-	return &SqsEventsWorker{BaseWorker: worker.NewBaseWorker(name), config: config, handlers: handlers}
+	return &AwsSqsEventsWorker{BaseWorker: worker.NewBaseWorker(name), config: config, handlers: handlers}
 }
 
-func (w *SqsEventsWorker) SetEvent(queue string, handler SqsWorkerRegFunc) {
+func (w *AwsSqsEventsWorker) SetEvent(queue string, handler AwsSqsWorkerRegFunc) {
 	w.handlers[queue] = handler
 }
 
-func (w *SqsEventsWorker) Setup() {
+func (w *AwsSqsEventsWorker) Setup() {
 	w.Logger.Info("Setting up Sqs Events")
 }
 
-func (w *SqsEventsWorker) Run() {
+func (w *AwsSqsEventsWorker) Run() {
 	w.Logger.Info("Running Sqs Events Worker")
 
 	wg := sync.WaitGroup{}
 
-	adapter := sqs_adapter.NewSqsAdapter("sqs-consumer", w.config)
+	adapter := sqs_adapter.NewAwsSqsAdapter("sqs-consumer", w.config)
 	err := adapter.Setup()
 	if err != nil {
 		w.Logger.Errorf("Failed to run '%s' worker during adapter configuration: %s", w.GetName(), err)
@@ -55,7 +55,7 @@ func (w *SqsEventsWorker) Run() {
 	for queueName, handler := range w.handlers {
 		wg.Add(1)
 
-		go func(qName string, handler SqsWorkerRegFunc) {
+		go func(qName string, handler AwsSqsWorkerRegFunc) {
 			defer wg.Done()
 
 			w.Logger.Infof("Consuming queue '%s'", qName)
@@ -105,7 +105,7 @@ func (w *SqsEventsWorker) Run() {
 	wg.Wait()
 }
 
-func (w *SqsEventsWorker) Stop() {
+func (w *AwsSqsEventsWorker) Stop() {
 	w.Logger.Info("stop signal received! Graceful shutting down")
 
 	w.stopPolling = true
