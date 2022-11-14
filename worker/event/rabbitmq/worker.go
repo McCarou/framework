@@ -54,7 +54,7 @@ func (w *RabbitMqEventWorker) Setup() {
 func (w *RabbitMqEventWorker) Run() {
 	w.Logger.Info("Running RabbitMq Events")
 
-	var err error = nil
+	var err error
 	w.connection, err = amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%d/", w.config.Username, w.config.Password, w.config.Host, w.config.Port))
 
 	if err != nil {

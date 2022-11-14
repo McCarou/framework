@@ -45,10 +45,8 @@ func NewRadianServiceManager() *RadianServiceManager {
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
 
-	mmap := make(MicroserviceMap)
-
 	return &RadianServiceManager{
-		microservices: mmap,
+		microservices: make(MicroserviceMap),
 		mainConfig:    config.NewConfigAdapter("Config"),
 		logger:        logger.WithField("manager", "framework"),
 	}
@@ -123,12 +121,14 @@ func (rsm *RadianServiceManager) SetupFromEnv(prefix string) (err error) {
 func (rsm *RadianServiceManager) setupInternal(mode string, _config string) (err error) {
 	names := strings.Split(mode, ",")
 
-	if mode == "" || mode == "monolith" || mode == "all" {
-		mode = "all"
-	} else if len(names) > 1 {
-		rsm.desiredServiceNames = names
-	} else {
-		rsm.desiredServiceNames = []string{mode}
+	if mode != "all" {
+		if mode == "" || mode == "monolith" {
+			mode = "all"
+		} else if len(names) > 1 {
+			rsm.desiredServiceNames = names
+		} else {
+			rsm.desiredServiceNames = []string{mode}
+		}
 	}
 
 	if _config != "" {
@@ -173,7 +173,15 @@ func (rsm *RadianServiceManager) Run(_microservices []string) {
 	for _, serviceName := range _microservices {
 		if _, ok := rsm.microservices[serviceName]; !ok {
 			if _, ok := rsm.microserviceCreators[serviceName]; !ok {
-				rsm.logger.Fatalf("worker with name %s is not found", serviceName)
+				availWorkers := []string{}
+				for k := range rsm.microservices {
+					availWorkers = append(availWorkers, k)
+				}
+				for k := range rsm.microserviceCreators {
+					availWorkers = append(availWorkers, k)
+				}
+
+				rsm.logger.Fatalf("worker with name %s is not found. Use \"all\" or names: %s", serviceName, strings.Join(availWorkers, ", "))
 			}
 
 			ms, err := rsm.microserviceCreators[serviceName](serviceName, rsm.mainConfig.GetAdapterOrNil([]string{serviceName}))
