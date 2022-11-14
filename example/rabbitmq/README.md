@@ -186,6 +186,8 @@ The message has been consumed! If something goes wrong you can check [`main.go`]
 
 ## 2 Docker compose
 
+WARNING: you must have docker and docker-compose installed on your system. Use [`this instruction`](https://docs.docker.com/compose/install/) if you don't have it.
+
 ### 1 Clone the repository
 
 ```

@@ -126,6 +126,8 @@ The answer has been received! If something goes wrong check [`main.go`](main.go)
 
 ## 2 Docker compose
 
+WARNING: you must have docker and docker-compose installed on your system. Use [`this instruction`](https://docs.docker.com/compose/install/) if you don't have it.
+
 ### 1 Clone the repository
 
 ```
