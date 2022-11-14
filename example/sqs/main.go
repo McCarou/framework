@@ -26,7 +26,7 @@ func handlerRestIn(c *gin.Context, wc *worker.WorkerAdapters) {
 
 	// get sqs adapter from all running adapters
 	adapter, _ := wc.Get(sqsAdapter)
-	adapterSqs := adapter.(*sqs_adapter.SqsAdapter)
+	adapterSqs := adapter.(*sqs_adapter.AwsSqsAdapter)
 
 	// publish to the input queue
 	adapterSqs.Publish(inQueue, messageString)
@@ -35,7 +35,7 @@ func handlerRestIn(c *gin.Context, wc *worker.WorkerAdapters) {
 func fromInToOutQueueHandler(message *sqs.Message, wc *worker.WorkerAdapters) error {
 	// get sqs adapter from all running adapters
 	adapter, _ := wc.Get(sqsAdapter)
-	adapterSqs := adapter.(*sqs_adapter.SqsAdapter)
+	adapterSqs := adapter.(*sqs_adapter.AwsSqsAdapter)
 
 	// publish to the output queue
 	adapterSqs.Publish(outQueue, aws.StringValue(message.Body))
@@ -46,7 +46,7 @@ func fromInToOutQueueHandler(message *sqs.Message, wc *worker.WorkerAdapters) er
 func handlerRestOut(c *gin.Context, wc *worker.WorkerAdapters) {
 	// get sqs adapter from all running adapters
 	adapter, _ := wc.Get(sqsAdapter)
-	adapterSqs := adapter.(*sqs_adapter.SqsAdapter)
+	adapterSqs := adapter.(*sqs_adapter.AwsSqsAdapter)
 
 	// read from the output queue
 	result, _ := adapterSqs.Consume(outQueue)
@@ -63,7 +63,7 @@ func main() {
 	radian := framework.NewRadianMicroservice("sqs-example")
 
 	// setup sqs adapter
-	adapterSqsConfig := &sqs_adapter.SqsConfig{
+	adapterSqsConfig := &sqs_adapter.AwsSqsConfig{
 		Endpoint:            "http://localstack:4566",
 		AccessKeyID:         "test_key_id",
 		SecretAccessKey:     "test_secret_access_key",
@@ -73,7 +73,7 @@ func main() {
 		WaitTimeSeconds:     1,
 		VisibilityTimeout:   1,
 	}
-	adapterSqs := sqs_adapter.NewSqsAdapter(sqsAdapter, adapterSqsConfig)
+	adapterSqs := sqs_adapter.NewAwsSqsAdapter(sqsAdapter, adapterSqsConfig)
 	adapterSqs.Setup()
 
 	// create queue
@@ -84,15 +84,19 @@ func main() {
 	restConfig := &rest.RestConfig{Listen: "0.0.0.0", Port: 8080}
 	workerRest := rest.NewRestServiceWorker("service_rest", restConfig)
 
+	// setup routes for workers
 	workerRest.SetRoute("POST", "/", handlerRestIn)
 	workerRest.SetRoute("GET", "/", handlerRestOut)
+
+	// set adapter to the worker
 	workerRest.SetAdapter(adapterSqs)
 
 	// setup sqs worker
-	workerSqs := sqs_worker.NewSqsEventsWorker("service_sqs", adapterSqsConfig)
+	workerSqs := sqs_worker.NewAwsSqsEventsWorker("service_sqs", adapterSqsConfig)
 	workerSqs.SetEvent(inQueue, fromInToOutQueueHandler)
 	workerSqs.SetAdapter(adapterSqs)
 
+	// add workers
 	radian.AddWorker(workerSqs)
 	radian.AddWorker(workerRest)
 

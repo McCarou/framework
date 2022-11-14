@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -136,21 +137,36 @@ func (r *RadianMicroservice) RunWithJobs(_preJobs []string, _workers []string, _
 	// check prejob names
 	for _, jobName := range _preJobs {
 		if _, ok := r.preJobs[jobName]; !ok {
-			r.logger.Fatalf("prejob with name %s is not found", jobName)
+			avails := []string{}
+			for k := range r.preJobs {
+				avails = append(avails, k)
+			}
+
+			r.logger.Fatalf("prejob with name %s is not found. Available names: %s", jobName, strings.Join(avails, ", "))
 		}
 	}
 
 	// check service names
 	for _, serviceName := range _workers {
 		if _, ok := r.workers[serviceName]; !ok {
-			r.logger.Fatalf("worker with name %s is not found", serviceName)
+			avails := []string{}
+			for k := range r.workers {
+				avails = append(avails, k)
+			}
+
+			r.logger.Fatalf("worker with name %s is not found. Available names: %s", serviceName, strings.Join(avails, ", "))
 		}
 	}
 
 	// check postjob names
 	for _, jobName := range _postJobs {
 		if _, ok := r.postJobs[jobName]; !ok {
-			r.logger.Fatalf("postjob with name %s is not found", jobName)
+			avails := []string{}
+			for k := range r.postJobs {
+				avails = append(avails, k)
+			}
+
+			r.logger.Fatalf("postjob with name %s is not found. Available names: %s", jobName, strings.Join(avails, ", "))
 		}
 	}
 
