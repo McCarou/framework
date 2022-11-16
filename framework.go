@@ -115,7 +115,7 @@ func (rsm *RadianServiceManager) SetupFromEnv(prefix string) (err error) {
 		return
 	}
 
-	return rsm.setupInternal(confAdapter.GetStringOrDefault([]string{"Mode"}, ""), confAdapter.GetStringOrDefault([]string{"Config"}, ""))
+	return rsm.setupInternal(confAdapter.GetStringOrDefault("", "Mode"), confAdapter.GetStringOrDefault("", "Config"))
 }
 
 func (rsm *RadianServiceManager) setupInternal(mode string, _config string) (err error) {
@@ -184,7 +184,7 @@ func (rsm *RadianServiceManager) Run(_microservices []string) {
 				rsm.logger.Fatalf("worker with name %s is not found. Use \"all\" or names: %s", serviceName, strings.Join(availWorkers, ", "))
 			}
 
-			ms, err := rsm.microserviceCreators[serviceName](serviceName, rsm.mainConfig.GetAdapterOrNil([]string{serviceName}))
+			ms, err := rsm.microserviceCreators[serviceName](serviceName, rsm.mainConfig.GetAdapterOrNil(serviceName))
 
 			if err != nil {
 				rsm.logger.Fatalf("worker with name %s created with the error: %v", serviceName, err)

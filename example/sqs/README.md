@@ -294,7 +294,7 @@ docker-compose up -d
 ### 4 Make a request to put a message to the input queue
 Commands:
 ```shell
-curl -X POST http://localhost:8080/ -H "Content-Type: application/text" -d "HellO!"
+curl -X POST -H "Content-Type: application/text" -d "HellO" http://localhost:8080/
 ```
 
 ### 5 Make a request to get the message from the output queue
@@ -306,7 +306,7 @@ curl -X GET http://localhost:8080/
 Example:
 ```
 curl -X GET http://localhost:8080/
-HellO!
+HellO
 ```
 
 ### 6 Enjoy!

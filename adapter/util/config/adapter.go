@@ -95,10 +95,10 @@ func (a *ConfigAdapter) loadMap(data []string, prefix, delimKeyValue, delimParam
 	return nil
 }
 
-func (a *ConfigAdapter) GetAdapter(path []string) (*ConfigAdapter, error) {
+func (a *ConfigAdapter) GetAdapter(path ...string) (*ConfigAdapter, error) {
 	ac := NewConfigAdapter(a.GetName())
 
-	m, err := a.GetValue(path)
+	m, err := a.GetValue(path...)
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +112,8 @@ func (a *ConfigAdapter) GetAdapter(path []string) (*ConfigAdapter, error) {
 	return ac, nil
 }
 
-func (a *ConfigAdapter) GetAdapterOrNil(path []string) *ConfigAdapter {
-	adp, err := a.GetAdapter(path)
+func (a *ConfigAdapter) GetAdapterOrNil(path ...string) *ConfigAdapter {
+	adp, err := a.GetAdapter(path...)
 
 	if err != nil {
 		return nil
@@ -122,8 +122,8 @@ func (a *ConfigAdapter) GetAdapterOrNil(path []string) *ConfigAdapter {
 	return adp
 }
 
-func (a *ConfigAdapter) GetValueOrDefault(path []string, defaultValue any) any {
-	result, err := a.GetValue(path)
+func (a *ConfigAdapter) GetValueOrDefault(defaultValue any, path ...string) any {
+	result, err := a.GetValue(path...)
 
 	if err != nil {
 		return defaultValue
@@ -132,8 +132,8 @@ func (a *ConfigAdapter) GetValueOrDefault(path []string, defaultValue any) any {
 	return result
 }
 
-func (a *ConfigAdapter) GetStringOrDefault(path []string, defaultValue string) string {
-	result, err := a.GetString(path)
+func (a *ConfigAdapter) GetStringOrDefault(defaultValue string, path ...string) string {
+	result, err := a.GetString(path...)
 
 	if err != nil {
 		return defaultValue
@@ -142,8 +142,8 @@ func (a *ConfigAdapter) GetStringOrDefault(path []string, defaultValue string) s
 	return result
 }
 
-func (a *ConfigAdapter) GetString(path []string) (string, error) {
-	result, err := a.GetValue(path)
+func (a *ConfigAdapter) GetString(path ...string) (string, error) {
+	result, err := a.GetValue(path...)
 
 	if err != nil {
 		return "", err
@@ -152,7 +152,7 @@ func (a *ConfigAdapter) GetString(path []string) (string, error) {
 	return fmt.Sprint(result), nil
 }
 
-func (a *ConfigAdapter) GetValue(path []string) (any, error) {
+func (a *ConfigAdapter) GetValue(path ...string) (any, error) {
 	if len(path) == 0 {
 		return a.config, nil
 	}
@@ -184,7 +184,7 @@ func (a *ConfigAdapter) GetValue(path []string) (any, error) {
 	return result, nil
 }
 
-func (a *ConfigAdapter) SetValue(path []string, val any) error {
+func (a *ConfigAdapter) SetValue(val any, path ...string) error {
 	if len(path) == 0 {
 		return nil
 	}
@@ -216,8 +216,8 @@ func (a *ConfigAdapter) Unmarshal(destination interface{}, skipRequired bool) er
 	return a.unmarshalFromMap(a.config, destination, skipRequired)
 }
 
-func (a *ConfigAdapter) UnmarshalPath(path []string, destination interface{}, skipRequired bool) error {
-	m, err := a.GetValue(path)
+func (a *ConfigAdapter) UnmarshalPath(destination interface{}, skipRequired bool, path ...string) error {
+	m, err := a.GetValue(path...)
 	if err != nil {
 		return err
 	}

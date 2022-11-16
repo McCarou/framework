@@ -14,7 +14,7 @@ func MonitoringMicroserviceCreate(name string, configAdapter *config.ConfigAdapt
 	}
 
 	monitoringConfig := &MonitoringServiceConfig{}
-	err := configAdapter.UnmarshalPath([]string{}, monitoringConfig, false)
+	err := configAdapter.UnmarshalPath(monitoringConfig, false)
 
 	if err != nil {
 		return nil, fmt.Errorf("configuration loading error for the service with name %s: %v", name, err)

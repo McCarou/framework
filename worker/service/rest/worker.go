@@ -16,8 +16,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type RegFuncRestServiceWorker func(c *gin.Context, wc *worker.WorkerAdapters)
-
 type RestConfig struct {
 	Listen string `json:"Listen,omitempty" config:"Listen,required"`
 	Port   int16  `json:"Port,omitempty" config:"Port,required"`
@@ -31,7 +29,7 @@ type RestServiceWorker struct {
 	routes *gin.Engine
 	server *http.Server
 
-	metricRequestCount *prometheus.CounterVec
+	metricRequestCount *prometheus.CounterVec // TODO: refactor to a Gin metric instrumentor
 }
 
 func NewRestServiceWorker(name string, config *RestConfig) *RestServiceWorker {
@@ -83,9 +81,14 @@ func NewRestServiceWorker(name string, config *RestConfig) *RestServiceWorker {
 	return wrkr
 }
 
-func (w *RestServiceWorker) SetRoute(method string, path string, handler RegFuncRestServiceWorker) {
+func (w *RestServiceWorker) SetRoute(method string, path string, handler RestServiceHandlerInterface) {
+	handler.SetLogger(w.Logger.WithField("path", fmt.Sprintf("%s %s", method, path)))
+	handler.SetAdapters(w.Adapters)
+
 	w.routes.Handle(strings.ToUpper(method), path, func(c *gin.Context) {
-		handler(c, w.Adapters)
+		handler.SetGinContext(c)
+
+		handler.Handle() // TODO: implement error handling
 	})
 }
 

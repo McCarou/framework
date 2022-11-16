@@ -3,17 +3,21 @@ package main
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/radianteam/framework"
-	"github.com/radianteam/framework/worker"
 	"github.com/radianteam/framework/worker/service/monitoring"
 	"github.com/radianteam/framework/worker/service/rest"
 )
 
+type MainHandler struct {
+	rest.RestServiceHandler
+}
+
 // REST handler function
-func handlerMain(c *gin.Context, wc *worker.WorkerAdapters) {
+func (h *MainHandler) Handle() error {
 	// return standard gin results
-	c.String(http.StatusOK, "Hello world!\n")
+	h.GinContext.String(http.StatusOK, "Hello world!\n")
+
+	return nil
 }
 
 func main() {
@@ -29,7 +33,7 @@ func main() {
 	workerPrometheus := monitoring.NewMonitoringServiceWorker("service_monitoring", prometheusConfig)
 
 	// create a route to the worker
-	workerRest.SetRoute("GET", "/", handlerMain)
+	workerRest.SetRoute("GET", "/", &MainHandler{})
 
 	// enable metrics collecting
 	workerRest.SetMonitoring(true)

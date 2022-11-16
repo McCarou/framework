@@ -9,11 +9,11 @@ import (
 )
 
 type AwsSqsConfig struct {
-	Endpoint            string `json:"Endpoint,omitempty,omitempty" config:"Endpoint"`
+	Endpoint            string `json:"Endpoint,omitempty" config:"Endpoint"`
 	Region              string `json:"Region,omitempty" config:"Region,required"`
-	AccessKeyID         string `json:"AwsAccessKeyID,omitempty" config:"AwsAccessKeyID"`
-	SecretAccessKey     string `json:"AwsSecretAccessKey,omitempty" config:"AwsSecretAccessKey"`
-	SessionToken        string `json:"AwsSessionToken,omitempty" config:"AwsSessionToken"`
+	AccessKeyID         string `json:"AccessKeyID,omitempty" config:"AccessKeyID"`
+	SecretAccessKey     string `json:"SecretAccessKey,omitempty" config:"SecretAccessKey"`
+	SessionToken        string `json:"SessionToken,omitempty" config:"SessionToken"`
 	MaxNumberOfMessages int64  `json:"MaxNumberOfMessages" config:"MaxNumberOfMessages"`
 	WaitTimeSeconds     int64  `json:"WaitTimeSeconds" config:"WaitTimeSeconds"`
 	VisibilityTimeout   int64  `json:"VisibilityTimeout" config:"VisibilityTimeout"`
