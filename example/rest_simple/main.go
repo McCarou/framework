@@ -3,27 +3,31 @@ package main
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/radianteam/framework"
 	sqlx "github.com/radianteam/framework/adapter/storage/sqlx"
-	"github.com/radianteam/framework/worker"
 	rest "github.com/radianteam/framework/worker/service/rest"
 )
 
+type MainHandler struct {
+	rest.RestServiceHandler
+}
+
 // REST handler function
-func handlerMain(c *gin.Context, wc *worker.WorkerAdapters) {
+func (h *MainHandler) Handle() error {
 	// extract the database adapter
-	_, err := wc.Get("db")
+	_, err := h.Adapters.Get("db")
 
 	if err != nil {
-		c.String(http.StatusBadRequest, "")
-		return
+		h.GinContext.String(http.StatusBadRequest, "")
+		return err
 	}
 
 	// use the adapters and whatever you want
 
 	// return standard gin results
-	c.String(http.StatusOK, "Hello world!\n")
+	h.GinContext.String(http.StatusOK, "Hello world!\n")
+
+	return nil
 }
 
 func main() {
@@ -42,7 +46,7 @@ func main() {
 	workerRest.SetAdapter(dbAdapter)
 
 	// create a route to the worker
-	workerRest.SetRoute("GET", "/", handlerMain)
+	workerRest.SetRoute("GET", "/", &MainHandler{})
 
 	// append worker to the framework
 	radian.AddWorker(workerRest)

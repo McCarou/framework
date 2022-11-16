@@ -1,17 +1,15 @@
 package sqs
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/sqs"
-	sqs_adapter "github.com/radianteam/framework/adapter/event/sqs"
-	"github.com/radianteam/framework/worker"
 	"sync"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	sqs_adapter "github.com/radianteam/framework/adapter/event/sqs"
+	"github.com/radianteam/framework/worker"
 )
 
 const RetryConsumeTimeoutMs = 10000
-
-type AwsSqsWorkerRegFunc func(d *sqs.Message, wc *worker.WorkerAdapters) error
 
 type AwsSqsEventsWorker struct {
 	*worker.BaseWorker
@@ -22,16 +20,16 @@ type AwsSqsEventsWorker struct {
 	waitChan    chan struct{}
 	stopPolling bool
 
-	handlers map[string]AwsSqsWorkerRegFunc
+	handlers map[string]AwsSqsEventHandlerInterface
 }
 
 func NewAwsSqsEventsWorker(name string, config *sqs_adapter.AwsSqsConfig) *AwsSqsEventsWorker {
-	handlers := make(map[string]AwsSqsWorkerRegFunc)
+	handlers := make(map[string]AwsSqsEventHandlerInterface)
 
 	return &AwsSqsEventsWorker{BaseWorker: worker.NewBaseWorker(name), config: config, handlers: handlers}
 }
 
-func (w *AwsSqsEventsWorker) SetEvent(queue string, handler AwsSqsWorkerRegFunc) {
+func (w *AwsSqsEventsWorker) SetEvent(queue string, handler AwsSqsEventHandlerInterface) {
 	w.handlers[queue] = handler
 }
 
@@ -55,8 +53,11 @@ func (w *AwsSqsEventsWorker) Run() {
 	for queueName, handler := range w.handlers {
 		wg.Add(1)
 
-		go func(qName string, handler AwsSqsWorkerRegFunc) {
+		go func(qName string, handler AwsSqsEventHandlerInterface) {
 			defer wg.Done()
+
+			handler.SetLogger(w.Logger.WithField("queue", qName))
+			handler.SetAdapters(w.Adapters)
 
 			w.Logger.Infof("Consuming queue '%s'", qName)
 			for {
@@ -78,7 +79,8 @@ func (w *AwsSqsEventsWorker) Run() {
 
 					// Single thread processing. Adapters can be none thread safe!
 					w.mutex.Lock()
-					err = handler(message, w.Adapters)
+					handler.SetSqsMessage(message)
+					err = handler.Handle()
 					w.mutex.Unlock()
 
 					if err != nil {
@@ -95,7 +97,7 @@ func (w *AwsSqsEventsWorker) Run() {
 					}
 				}
 
-				w.Logger.Infof("Consuming queue '%s' stopped", qName)
+				w.Logger.Debugf("Consuming queue '%s' stopped", qName)
 			}
 		}(queueName, handler)
 	}

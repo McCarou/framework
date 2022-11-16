@@ -1,8 +1,6 @@
 package worker
 
 import (
-	"fmt"
-
 	"github.com/radianteam/framework/adapter"
 	"github.com/sirupsen/logrus"
 )
@@ -21,8 +19,6 @@ type WorkerInterface interface {
 	Stop()
 	SetMonitoring(enabled bool)
 	IsMonitoringEnable() bool
-	SetArgument(string, string)
-	GetArgument(string) (string, error)
 }
 
 // Worker structure contains an adapter list and implements
@@ -34,7 +30,6 @@ type BaseWorker struct {
 	monitoringEnabled bool
 	Logger            *logrus.Entry
 	Adapters          *WorkerAdapters
-	arguments         map[string]string
 }
 
 // Function allocates BaseWorker structure with JSON logger
@@ -52,7 +47,6 @@ func NewBaseWorker(name string) *BaseWorker {
 		Logger:            logger.WithField("worker", name),
 		Adapters:          NewWorkerAdapters(),
 		monitoringEnabled: false,
-		arguments:         make(map[string]string),
 	}
 }
 
@@ -98,16 +92,4 @@ func (w *BaseWorker) SetMonitoring(enabled bool) {
 // Function returns monitoring status.
 func (w *BaseWorker) IsMonitoringEnable() bool {
 	return w.monitoringEnabled
-}
-
-func (w *BaseWorker) SetArgument(name string, value string) {
-	w.arguments[name] = value
-}
-
-func (w *BaseWorker) GetArgument(name string) (string, error) {
-	if val, ok := w.arguments[name]; ok {
-		return val, nil
-	}
-
-	return "", fmt.Errorf("argument %s is not found", name)
 }

@@ -7,11 +7,10 @@ import (
 	"sync"
 
 	"github.com/radianteam/framework/worker"
+	"github.com/sirupsen/logrus"
 
 	"github.com/streadway/amqp"
 )
-
-type RabbitMqEventWorkerRegFunc func(d *amqp.Delivery, wc *worker.WorkerAdapters) error
 
 type RabbitMqConfig struct {
 	Host          string `json:"Host,omitempty" config:"Host,required"`
@@ -31,20 +30,23 @@ type RabbitMqEventWorker struct {
 	mutex    sync.Mutex
 	waitChan chan bool
 
-	handlers map[string]map[string]RabbitMqEventWorkerRegFunc
+	handlers map[string]map[string]RabbitMqEventHandlerInterface
 }
 
 func NewRabbitMqEventWorker(name string, config *RabbitMqConfig) *RabbitMqEventWorker {
-	handlers := make(map[string]map[string]RabbitMqEventWorkerRegFunc)
+	handlers := make(map[string]map[string]RabbitMqEventHandlerInterface)
 	return &RabbitMqEventWorker{BaseWorker: worker.NewBaseWorker(name), config: config, handlers: handlers}
 }
 
-func (w *RabbitMqEventWorker) SetEvent(queue string, routingKey string, handler RabbitMqEventWorkerRegFunc) {
+func (w *RabbitMqEventWorker) SetEvent(queue string, routingKey string, handler RabbitMqEventHandlerInterface) {
 	if _, ok := w.handlers[queue]; !ok {
-		w.handlers[queue] = make(map[string]RabbitMqEventWorkerRegFunc)
+		w.handlers[queue] = make(map[string]RabbitMqEventHandlerInterface)
 	}
 
 	w.handlers[queue][routingKey] = handler
+
+	w.handlers[queue][routingKey].SetLogger(w.Logger.WithFields(logrus.Fields{"queue": queue, "routing_key": routingKey}))
+	w.handlers[queue][routingKey].SetAdapters(w.Adapters)
 }
 
 func (w *RabbitMqEventWorker) Setup() {
@@ -66,7 +68,7 @@ func (w *RabbitMqEventWorker) Run() {
 	for queueName, routingKeys := range w.handlers {
 		wg.Add(1)
 
-		go func(name string, handlers map[string]RabbitMqEventWorkerRegFunc) {
+		go func(name string, handlers map[string]RabbitMqEventHandlerInterface) {
 			defer wg.Done()
 
 			w.Logger.Infof("Consuming queue %s", name)
@@ -105,7 +107,8 @@ func (w *RabbitMqEventWorker) Run() {
 
 				//single thread processing. contexts can be none thread safe!
 				w.mutex.Lock()
-				err = handler(&message, w.Adapters)
+				handler.SetMqMessage(&message)
+				err = handler.Handle()
 				w.mutex.Unlock()
 
 				if err != nil {
