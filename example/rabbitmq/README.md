@@ -55,8 +55,12 @@ Next implement a RabbitMQ handler that receives messages and store them to the v
 
 ``` go
 // RabbitMQ handler: reads queue and writes message body into lastMessage
-func handlerRabbitMq(d *amqp.Delivery, wc *worker.WorkerAdapters) error {
-	lastMessage = string(d.Body)
+type HandlerRabbitMq struct {
+	rmq_worker.RabbitMqEventHandler
+}
+
+func (h *HandlerRabbitMq) Handle() error {
+	lastMessage = string(h.MqMessage.Body)
 
 	return nil
 }
@@ -66,8 +70,14 @@ Finally implement 2 rest handlers: one for reading the last message variable
 
 ``` go
 // REST handler: reads lastMessage and returns text
-func handlerRead(c *gin.Context, wc *worker.WorkerAdapters) {
-	c.String(http.StatusOK, fmt.Sprintf("The last message: %s\n", lastMessage))
+type HandlerRead struct {
+	rest.RestServiceHandler
+}
+
+func (h *HandlerRead) Handle() error {
+	h.GinContext.String(http.StatusOK, fmt.Sprintf("The last message: %s\n", lastMessage))
+
+	return nil
 }
 ```
 
@@ -75,13 +85,19 @@ And one for sending messages into RabbitMQ
 
 ``` go
 // REST handler: reads POST body and send an event to RabbitMQ
-func handlerSend(c *gin.Context, wc *worker.WorkerAdapters) {
-	buff, _ := io.ReadAll(c.Request.Body)
+type HandlerSend struct {
+	rest.RestServiceHandler
+}
 
-	rmqAdapter, _ := wc.Get("rmq")
+func (h *HandlerSend) Handle() error {
+	buff, _ := io.ReadAll(h.GinContext.Request.Body)
+
+	rmqAdapter, _ := h.Adapters.Get("rmq")
 	rmqAdapter.(*rmq_adapter.RabbitMqAdapter).Publish("test_queue", buff)
 
-	c.String(http.StatusOK, "")
+	h.GinContext.String(http.StatusOK, "")
+
+	return nil
 }
 ```
 
@@ -108,8 +124,8 @@ After create a new REST service that listens all adresses and port 8088 and set 
 	workerRest := rest.NewRestServiceWorker("service_rest", workerRestConfig)
 
 	// create routes to the worker
-	workerRest.SetRoute("GET", "/", handlerRead)
-	workerRest.SetRoute("POST", "/", handlerSend)
+	workerRest.SetRoute("GET", "/", &HandlerRead{})
+	workerRest.SetRoute("POST", "/", &HandlerSend{})
 ```
 
 Append the RabbitMQ adapter from the prejob. You can reuse it because the prejob doesn't ned it anymore:
@@ -127,7 +143,7 @@ Create a new RabbitMQ worker and add the handler to handle messages from the tes
 	workerMq := rmq_worker.NewRabbitMqEventWorker("event_mq", workerMqConfig)
 
 	// set handlers to the worker
-	workerMq.SetEvent("test_queue", "test_queue", handlerRabbitMq)
+	workerMq.SetEvent("test_queue", "test_queue", &HandlerRabbitMq{})
 ```
 
 Add the workers to the main framework instance:
