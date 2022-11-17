@@ -54,7 +54,7 @@ Declare a handler for a GET request with a root path (function will be implement
 
 ``` go
     // create a route to the worker
-	workerRest.SetRoute("GET", "/", handlerMain)
+	workerRest.SetRoute("GET", "/", &MainHandler{})
 ```
 
 Enable monitoring for the worker:
@@ -82,20 +82,17 @@ Run the framework instance with the particular services:
 Final step: declare and implement a handler function above the main fnction:
 
 ``` go
+// REST handler struct
+type MainHandler struct {
+	rest.RestServiceHandler
+}
+
 // REST handler function
-func handlerMain(c *gin.Context, wc *worker.WorkerAdapters) {
-	// extract the database adapter
-	_, err := wc.Get("db")
-
-	if err != nil {
-		c.String(http.StatusBadRequest, "")
-		return
-	}
-
-	// use the adapters and whatever you want
-
+func (h *MainHandler) Handle() error {
 	// return standard gin results
-	c.String(http.StatusOK, "Hello world!\n")
+	h.GinContext.String(http.StatusOK, "Hello world!\n")
+
+	return nil
 }
 ```
 
