@@ -44,7 +44,7 @@ func NewRadianMicroservice(name string) *RadianMicroservice {
 	return &RadianMicroservice{
 		workers: w,
 		name:    name,
-		logger:  logger.WithField("worker", name),
+		logger:  logger.WithField("microservice", name),
 	}
 }
 
@@ -59,6 +59,8 @@ func (r *RadianMicroservice) AddWorker(w worker.WorkerInterface) error {
 	if r.workers == nil {
 		r.workers = make(WorkersMap)
 	}
+
+	w.SetMicroserviceName(r.GetName())
 
 	r.workers[w.GetName()] = w
 

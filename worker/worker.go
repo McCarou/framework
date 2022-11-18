@@ -11,6 +11,7 @@ import (
 type WorkerInterface interface {
 	GetName() string
 	SetName(string)
+	SetMicroserviceName(string)
 	SetAdapter(adapter.AdapterInterface)
 	SetupAdapters() error
 	CloseAdapters() error
@@ -62,6 +63,11 @@ func (w *BaseWorker) SetName(name string) {
 	w.Logger = logger.WithField("worker", name)
 
 	w.name = name
+}
+
+// Set current worker name.
+func (w *BaseWorker) SetMicroserviceName(name string) {
+	w.Logger = w.Logger.WithField("microservice", name)
 }
 
 // Function appends an adapter to the worker's adapter list.
