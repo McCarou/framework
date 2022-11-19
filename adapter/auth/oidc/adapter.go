@@ -71,7 +71,7 @@ func (a *OidcAdapter) Setup() (err error) {
 }
 
 func (a *OidcAdapter) Close() (err error) {
-	//TODO: do nothing
+	// nothing to do
 	return
 }
 

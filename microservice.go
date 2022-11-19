@@ -172,7 +172,7 @@ func (r *RadianMicroservice) RunWithJobs(_preJobs []string, _workers []string, _
 		}
 	}
 
-	// TODO: run prejobs
+	// run prejobs
 	for _, jobName := range _preJobs {
 		r.logger.Infof("prejob %s: setting up adapters", jobName)
 		err := r.preJobs[jobName].SetupAdapters()
@@ -246,7 +246,7 @@ func (r *RadianMicroservice) RunWithJobs(_preJobs []string, _workers []string, _
 
 	wg.Wait()
 
-	// TODO: run posttasks
+	// run posttasks
 	for _, jobName := range _postJobs {
 		r.logger.Infof("postjob %s: setting up adapters", jobName)
 		err := r.postJobs[jobName].SetupAdapters()
