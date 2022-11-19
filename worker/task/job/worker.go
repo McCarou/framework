@@ -4,24 +4,17 @@ import (
 	"context"
 
 	"github.com/radianteam/framework/worker"
-	"github.com/sirupsen/logrus"
 )
-
-// Function template to handle tasks.
-type TaskJobHandleFunc func(ctx context.Context, wc *worker.WorkerAdapters) error
 
 // Structure contains a task handler.
 type TaskJob struct {
 	*worker.BaseWorker
 
-	Handler TaskJobHandleFunc
+	Handler TaskJobHandler
 }
 
 // Function creates a new job.
-func NewTaskJob(name string, handler TaskJobHandleFunc) *TaskJob {
-	logger := logrus.New()
-	logger.SetFormatter(&logrus.JSONFormatter{})
-
+func NewTaskJob(name string, handler TaskJobHandler) *TaskJob {
 	return &TaskJob{BaseWorker: worker.NewBaseWorker(name), Handler: handler}
 }
 
@@ -29,7 +22,11 @@ func NewTaskJob(name string, handler TaskJobHandleFunc) *TaskJob {
 func (w *TaskJob) Run(ctx context.Context) (err error) {
 	w.Logger.Infof("Running Job: %s", w.GetName())
 
-	err = w.Handler(ctx, w.Adapters)
+	w.Handler.SetContext(ctx)
+	w.Handler.SetAdapters(w.Adapters)
+	w.Handler.SetLogger(w.Logger.WithField("job", w.GetName()))
+
+	err = w.Handler.Handle()
 
 	if err != nil {
 		w.Logger.Infof("Job %s has been completed with error: %v", w.GetName(), err)

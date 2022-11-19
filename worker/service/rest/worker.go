@@ -82,8 +82,8 @@ func NewRestServiceWorker(name string, config *RestConfig) *RestServiceWorker {
 }
 
 func (w *RestServiceWorker) SetRoute(method string, path string, handler RestServiceHandlerInterface) {
-	handler.SetLogger(w.Logger.WithField("path", fmt.Sprintf("%s %s", method, path)))
-	handler.SetAdapters(w.Adapters)
+	handler.SetLogger(w.Logger.WithField("path", fmt.Sprintf("%s %s", method, path))) // TODO: move to setup
+	handler.SetAdapters(w.Adapters)                                                   // TODO: move to setup
 
 	w.routes.Handle(strings.ToUpper(method), path, func(c *gin.Context) {
 		handler.SetGinContext(c)
