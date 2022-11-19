@@ -1,14 +1,12 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/radianteam/framework"
 	rmq_adapter "github.com/radianteam/framework/adapter/event/rabbitmq"
-	"github.com/radianteam/framework/worker"
 	rmq_worker "github.com/radianteam/framework/worker/event/rabbitmq"
 	"github.com/radianteam/framework/worker/service/rest"
 	"github.com/radianteam/framework/worker/task/job"
@@ -16,8 +14,12 @@ import (
 
 var lastMessage string
 
-func InitRabbitMqExchange(ctx context.Context, wc *worker.WorkerAdapters) error {
-	rmqAdapter, _ := wc.Get("rmq")
+type HandlerInitMq struct {
+	job.TaskJobHandler
+}
+
+func (h *HandlerInitMq) Handle() error {
+	rmqAdapter, _ := h.Adapters.Get("rmq")
 	rmqAdapter.(*rmq_adapter.RabbitMqAdapter).DeclareQueue("test_queue", true)
 
 	return nil
@@ -66,7 +68,7 @@ func main() {
 	radian := framework.NewRadianMicroservice("main")
 
 	// create init prejob to declare a queue
-	initMqJob := job.NewTaskJob("init_mq", InitRabbitMqExchange)
+	initMqJob := job.NewTaskJob("init_mq", &HandlerInitMq{})
 
 	// create an adapter for rabbitmq
 	adapterMqConfig := &rmq_adapter.RabbitMqConfig{Host: "rabbitmq", Port: 5672, Username: "example", Password: "pass", Exchange: ""}

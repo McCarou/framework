@@ -10,11 +10,11 @@ import (
 type TaskJob struct {
 	*worker.BaseWorker
 
-	Handler TaskJobHandler
+	Handler TaskJobHandlerInterface
 }
 
 // Function creates a new job.
-func NewTaskJob(name string, handler TaskJobHandler) *TaskJob {
+func NewTaskJob(name string, handler TaskJobHandlerInterface) *TaskJob {
 	return &TaskJob{BaseWorker: worker.NewBaseWorker(name), Handler: handler}
 }
 
