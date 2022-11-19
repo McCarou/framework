@@ -45,8 +45,8 @@ func (w *RabbitMqEventWorker) SetEvent(queue string, routingKey string, handler 
 
 	w.handlers[queue][routingKey] = handler
 
-	w.handlers[queue][routingKey].SetLogger(w.Logger.WithFields(logrus.Fields{"queue": queue, "routing_key": routingKey}))
-	w.handlers[queue][routingKey].SetAdapters(w.Adapters)
+	w.handlers[queue][routingKey].SetLogger(w.Logger.WithFields(logrus.Fields{"queue": queue, "routing_key": routingKey})) // TODO: move to setup
+	w.handlers[queue][routingKey].SetAdapters(w.Adapters)                                                                  // TODO: move to setup
 }
 
 func (w *RabbitMqEventWorker) Setup() {
