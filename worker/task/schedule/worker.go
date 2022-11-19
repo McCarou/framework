@@ -16,9 +16,6 @@ const (
 	TaskTypeCron
 )
 
-// Function template to handle tasks.
-type TaskScheduleHandleFunc func(ctx context.Context, wc *worker.WorkerAdapters) error
-
 // Structure contains information about chrono task
 // (not pretasks and posttasks!).
 type Task struct {
@@ -28,7 +25,7 @@ type Task struct {
 	CronStr string
 
 	Executor *chrono.Task
-	Handler  TaskScheduleHandleFunc
+	Handler  TaskScheduleHandler
 }
 
 // Structure contains a task list and chrono scheduler
@@ -50,19 +47,19 @@ func NewTaskSchedule(name string) *TaskSchedule {
 
 // Function adds a delay task. The task will be
 // executed after fixed duration AFTER completing previous execution.
-func (w *TaskSchedule) AddDelayTask(delay time.Duration, handler TaskScheduleHandleFunc) {
+func (w *TaskSchedule) AddDelayTask(delay time.Duration, handler TaskScheduleHandler) {
 	w.tasks = append(w.tasks, Task{Type: TaskTypeDelay, Delay: delay, Handler: handler})
 }
 
 // Function adds a fixed delay task. The task will be
 // executed after fixed duration FROM previous execution start.
-func (w *TaskSchedule) AddFixedDelayTask(delay time.Duration, handler TaskScheduleHandleFunc) {
+func (w *TaskSchedule) AddFixedDelayTask(delay time.Duration, handler TaskScheduleHandler) {
 	w.tasks = append(w.tasks, Task{Type: TaskTypeFixedDelay, Delay: delay, Handler: handler})
 }
 
 // Function adds a fixed delay task. The task will be
 // executed by a cron schedule rule
-func (w *TaskSchedule) AddCronTask(cronStr string, handler TaskScheduleHandleFunc) {
+func (w *TaskSchedule) AddCronTask(cronStr string, handler TaskScheduleHandler) {
 	w.tasks = append(w.tasks, Task{Type: TaskTypeCron, CronStr: cronStr, Handler: handler})
 }
 
@@ -81,7 +78,10 @@ func (w *TaskSchedule) Run() {
 		taskScope := task
 
 		handler := func(ctx context.Context) {
-			err := taskScope.Handler(ctx, w.Adapters)
+			taskScope.Handler.SetAdapters(w.Adapters)
+			taskScope.Handler.SetContext(ctx)
+
+			err := taskScope.Handler.Handle()
 
 			if err != nil {
 				w.Logger.Errorf("Task has been completed with error: %v", err)
