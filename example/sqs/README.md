@@ -42,12 +42,13 @@ import (
 )
 ```
 
-Declare required constants
+Declare required constants and a proxy variable
 
 ``` go
+var lastMessage string
+
 const (
-	inQueue    = "in"
-	outQueue   = "out"
+	queueName  = "testqueue"
 	sqsAdapter = "sqs-adapter"
 )
 ```
@@ -74,17 +75,17 @@ After the instance create and setup new SQS adapter:
 		MaxNumberOfMessages: 1,
 		WaitTimeSeconds:     1,
 		VisibilityTimeout:   1,
+		Queue:               "testqueue",
 	}
 	adapterSqs := sqs_adapter.NewAwsSqsAdapter(sqsAdapter, adapterSqsConfig)
 	adapterSqs.Setup()
 ```
 
-Create two queues -- for input and output.
+Create a queue
 
 ``` go
     // create queue
-	adapterSqs.CreateQueue(inQueue)
-	adapterSqs.CreateQueue(outQueue)
+	adapterSqs.CreateQueue(queueName)
 ```
 
 Create a configuration for a REST service and create a new REST service that listens all adresses and port 8088. Name this service as you wish ("service_rest" for example):
@@ -113,7 +114,7 @@ Setup AWS SQS worker:
 ``` go
     // setup sqs worker
 	workerSqs := sqs_worker.NewAwsSqsEventsWorker("service_sqs", adapterSqsConfig)
-	workerSqs.SetEvent(inQueue, &QueueHandler{})
+	workerSqs.SetEvent(queueName, &QueueHandler{})
 	workerSqs.SetAdapter(adapterSqs)
 ```
 
@@ -132,7 +133,8 @@ Run the framework instance with the particular services:
 	radian.RunAll()
 ```
 
-Declare and implement handlers functions above the main function:
+Declare and implement handlers functions above the main function.
+The first REST handler receives a message sent by POST request and publishes it to the input queue.
 
 ``` go
 type HandlerRestIn struct {
@@ -149,53 +151,40 @@ func (h *HandlerRestIn) Handle() error {
 	adapterSqs := adapter.(*sqs_adapter.AwsSqsAdapter)
 
 	// publish to the input queue
-	adapterSqs.PublishQueue(inQueue, messageString)
-
-	return nil
-}
-
-type QueueHandler struct {
-	sqs_worker.AwsSqsEventHandler
-}
-
-func (h *QueueHandler) Handle() error {
-	// get sqs adapter from all running adapters
-	adapter, _ := h.Adapters.Get(sqsAdapter)
-	adapterSqs := adapter.(*sqs_adapter.AwsSqsAdapter)
-
-	// publish to the output queue
-	adapterSqs.PublishQueue(outQueue, aws.StringValue(h.SqsMessage.Body))
-
-	return nil
-}
-
-type HandlerRestOut struct {
-	rest.RestServiceHandler
-}
-
-func (h *HandlerRestOut) Handle() error {
-	// get sqs adapter from all running adapters
-	adapter, _ := h.Adapters.Get(sqsAdapter)
-	adapterSqs := adapter.(*sqs_adapter.AwsSqsAdapter)
-
-	// read from the output queue
-	result, _ := adapterSqs.Consume(outQueue)
-
-	// remove message after consuming
-	adapterSqs.DeleteMessage(outQueue, *result[0].ReceiptHandle)
-
-	// return response
-	h.GinContext.String(http.StatusOK, fmt.Sprintf("%s\n", aws.StringValue(result[0].Body)))
+	adapterSqs.PublishQueue(queueName, messageString)
 
 	return nil
 }
 ```
 
-The first REST handler receives a message sent by POST request and publishes it to the input queue. 
-<br>
-The second SQS handler extracts the message from the input queue and publishes to the output queue. 
-<br>
-The third REST handler receives GET request and extracts the message from the output queue, then returns it in the response.
+The second SQS handler extracts the message from the input queue and saves it to the proxy variable.
+
+``` go
+type QueueHandler struct {
+	sqs_worker.AwsSqsEventHandler
+}
+
+func (h *QueueHandler) Handle() error {
+	// save the message
+	lastMessage = aws.StringValue(h.SqsMessage.Body)
+
+	return nil
+}
+```
+
+The third REST handler receives GET request and extracts the message from the proxy variable, then returns it in the response.
+``` go
+type HandlerRestOut struct {
+	rest.RestServiceHandler
+}
+
+func (h *HandlerRestOut) Handle() error {
+	h.GinContext.String(http.StatusOK, fmt.Sprintf("The last message: %s\n", lastMessage))
+
+	return nil
+}
+```
+
 <br>
 
 Create `Dockerfile` and paste the following content:
