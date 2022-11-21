@@ -149,7 +149,7 @@ func (h *HandlerRestIn) Handle() error {
 	adapterSqs := adapter.(*sqs_adapter.AwsSqsAdapter)
 
 	// publish to the input queue
-	adapterSqs.Publish(inQueue, messageString)
+	adapterSqs.PublishQueue(inQueue, messageString)
 
 	return nil
 }
@@ -164,7 +164,7 @@ func (h *QueueHandler) Handle() error {
 	adapterSqs := adapter.(*sqs_adapter.AwsSqsAdapter)
 
 	// publish to the output queue
-	adapterSqs.Publish(outQueue, aws.StringValue(h.SqsMessage.Body))
+	adapterSqs.PublishQueue(outQueue, aws.StringValue(h.SqsMessage.Body))
 
 	return nil
 }
