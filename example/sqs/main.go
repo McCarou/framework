@@ -12,9 +12,10 @@ import (
 	"github.com/radianteam/framework/worker/service/rest"
 )
 
+var lastMessage string
+
 const (
-	inQueue    = "in"
-	outQueue   = "out"
+	queueName  = "testqueue"
 	sqsAdapter = "sqs-adapter"
 )
 
@@ -32,7 +33,7 @@ func (h *HandlerRestIn) Handle() error {
 	adapterSqs := adapter.(*sqs_adapter.AwsSqsAdapter)
 
 	// publish to the input queue
-	adapterSqs.Publish(inQueue, messageString)
+	adapterSqs.PublishQueue(queueName, messageString)
 
 	return nil
 }
@@ -42,12 +43,8 @@ type QueueHandler struct {
 }
 
 func (h *QueueHandler) Handle() error {
-	// get sqs adapter from all running adapters
-	adapter, _ := h.Adapters.Get(sqsAdapter)
-	adapterSqs := adapter.(*sqs_adapter.AwsSqsAdapter)
-
-	// publish to the output queue
-	adapterSqs.Publish(outQueue, aws.StringValue(h.SqsMessage.Body))
+	// save the message
+	lastMessage = aws.StringValue(h.SqsMessage.Body)
 
 	return nil
 }
@@ -57,18 +54,7 @@ type HandlerRestOut struct {
 }
 
 func (h *HandlerRestOut) Handle() error {
-	// get sqs adapter from all running adapters
-	adapter, _ := h.Adapters.Get(sqsAdapter)
-	adapterSqs := adapter.(*sqs_adapter.AwsSqsAdapter)
-
-	// read from the output queue
-	result, _ := adapterSqs.Consume(outQueue)
-
-	// remove message after consuming
-	adapterSqs.DeleteMessage(outQueue, *result[0].ReceiptHandle)
-
-	// return response
-	h.GinContext.String(http.StatusOK, fmt.Sprintf("%s\n", aws.StringValue(result[0].Body)))
+	h.GinContext.String(http.StatusOK, fmt.Sprintf("The last message: %s\n", lastMessage))
 
 	return nil
 }
@@ -87,13 +73,13 @@ func main() {
 		MaxNumberOfMessages: 1,
 		WaitTimeSeconds:     1,
 		VisibilityTimeout:   1,
+		Queue:               "testqueue",
 	}
 	adapterSqs := sqs_adapter.NewAwsSqsAdapter(sqsAdapter, adapterSqsConfig)
 	adapterSqs.Setup()
 
 	// create queue
-	adapterSqs.CreateQueue(inQueue)
-	adapterSqs.CreateQueue(outQueue)
+	adapterSqs.CreateQueue(queueName)
 
 	// setup rest worker
 	restConfig := &rest.RestConfig{Listen: "0.0.0.0", Port: 8080}
@@ -108,7 +94,7 @@ func main() {
 
 	// setup sqs worker
 	workerSqs := sqs_worker.NewAwsSqsEventsWorker("service_sqs", adapterSqsConfig)
-	workerSqs.SetEvent(inQueue, &QueueHandler{})
+	workerSqs.SetEvent(queueName, &QueueHandler{})
 	workerSqs.SetAdapter(adapterSqs)
 
 	// add workers

@@ -1,6 +1,8 @@
 package sqs
 
 import (
+	"errors"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -18,6 +20,8 @@ type AwsSqsConfig struct {
 	WaitTimeSeconds     int64  `json:"WaitTimeSeconds" config:"WaitTimeSeconds"`
 	VisibilityTimeout   int64  `json:"VisibilityTimeout" config:"VisibilityTimeout"`
 	SharedCredentials   bool   `json:"SharedCredentials,omitempty" config:"SharedCredentials"`
+
+	Queue string `json:"Queue,omitempty" config:"Queue"`
 }
 
 type AwsSqsAdapter struct {
@@ -104,8 +108,17 @@ func (a *AwsSqsAdapter) DeleteMessage(qName, receiptHandle string) (err error) {
 	return
 }
 
-func (a *AwsSqsAdapter) Publish(qName, message string) (err error) {
+func (a *AwsSqsAdapter) Publish(message string) (err error) {
+	if a.config.Queue == "" {
+		return errors.New("queue name is empty")
+	}
+
+	return a.PublishQueue(a.config.Queue, message)
+}
+
+func (a *AwsSqsAdapter) PublishQueue(qName, message string) (err error) {
 	queueUrl, err := a.getQueueUrl(qName)
+
 	if err != nil {
 		return
 	}
