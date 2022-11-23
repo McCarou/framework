@@ -84,14 +84,14 @@ func (w *AwsSqsEventsWorker) Run() {
 					w.mutex.Unlock()
 
 					if err != nil {
-						w.Logger.Errorf("Queue '%s' failed to proceed the message '%s ", qName, message)
+						w.Logger.Errorf("Queue '%s' failed to proceed the message '%s' with error '%v'", qName, message, err)
 
 						return
 					}
 
 					err = adapter.DeleteMessage(qName, *message.ReceiptHandle)
 					if err != nil {
-						w.Logger.Errorf("Failed to delete the message '%s' from queue '%s'", message, qName)
+						w.Logger.Errorf("Failed to delete the message '%s' from queue '%s' with error '%v'", message, qName, err)
 
 						return
 					}
