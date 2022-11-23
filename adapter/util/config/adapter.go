@@ -165,11 +165,11 @@ func (a *ConfigAdapter) GetValue(path ...string) (any, error) {
 		}
 
 		if _, ok := n[value]; !ok {
-			return nil, errors.New("path not valid: " + strings.Join(append(path[:idx], value), ".")) // TODO: make more info in error
+			return nil, errors.New("path not valid: " + strings.Join(append(path[:idx], value), "."))
 		}
 
 		if reflect.TypeOf(n).Kind() != reflect.TypeOf(n[value]).Kind() {
-			return nil, errors.New("wrong configuration") // TODO: make more info in error
+			return nil, errors.New("wrong configuration for " + strings.Join(append(path[:idx], value), "."))
 		}
 
 		n = n[value].(map[string]any)
@@ -178,7 +178,7 @@ func (a *ConfigAdapter) GetValue(path ...string) (any, error) {
 	result, ok := n[path[len(path)-1]]
 
 	if !ok {
-		return nil, errors.New("value not found: " + path[len(path)-1]) // TODO: return name of the value
+		return nil, errors.New("value not found: " + path[len(path)-1] + " for path " + strings.Join(path, "."))
 	}
 
 	return result, nil
@@ -201,7 +201,7 @@ func (a *ConfigAdapter) SetValue(val any, path ...string) error {
 		}
 
 		if reflect.TypeOf(n).Kind() != reflect.TypeOf(n[value]).Kind() {
-			return errors.New("wrong configuration") // TODO: make more info in error
+			return errors.New("wrong configuration for " + strings.Join(append(path[:idx], value), "."))
 		}
 
 		n = n[value].(map[string]any)
@@ -223,7 +223,7 @@ func (a *ConfigAdapter) UnmarshalPath(destination interface{}, skipRequired bool
 	}
 
 	if reflect.TypeOf(m).Kind() != reflect.TypeOf(map[string]any{}).Kind() {
-		return errors.New("invalid config") // TODO: make more info in error
+		return errors.New("invalid config: wrong param type for path " + strings.Join(path, "."))
 	}
 
 	return a.unmarshalFromMap(m.(map[string]any), destination, skipRequired)
@@ -233,6 +233,7 @@ func (a *ConfigAdapter) unmarshalFromMap(source map[string]any, destination inte
 	if source == nil {
 		return errors.New("empty config")
 	}
+
 	if destination == nil {
 		return errors.New("empty structure")
 	}
