@@ -1,11 +1,18 @@
 package rabbitmq
 
 import (
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/radianteam/framework/adapter"
 	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
+)
+
+const (
+	RabbitMqPublishTimeoutMs = 5000 // TODO: make configurable
+	NotifyChannelSize        = 10
 )
 
 type RabbitMqConfig struct {
@@ -23,6 +30,7 @@ type RabbitMqAdapter struct {
 
 	connection *amqp.Connection
 	channel    *amqp.Channel
+	notifyChan chan amqp.Confirmation
 }
 
 func NewRabbitMqAdapter(name string, config *RabbitMqConfig) *RabbitMqAdapter {
@@ -54,7 +62,17 @@ func (a *RabbitMqAdapter) Setup() (err error) {
 		return
 	}
 
-	return a.channel.Qos(1, 0, false)
+	a.channel.Confirm(false)
+	if err != nil {
+		logrus.WithField("adapter", a.GetName()).Error(err)
+		return
+	}
+
+	a.notifyChan = make(chan amqp.Confirmation, NotifyChannelSize)
+
+	a.notifyChan = a.channel.NotifyPublish(a.notifyChan)
+
+	return a.channel.Qos(1, 0, false) // TODO: hardcode
 }
 
 func (a *RabbitMqAdapter) Close() (err error) {
@@ -107,13 +125,27 @@ func (a *RabbitMqAdapter) PublishExchange(exchange string, key string, message [
 		return
 	}
 
-	return a.channel.Publish(exchange, key, false, false, amqp.Publishing{Body: message})
+	err = a.channel.Publish(exchange, key, false, false, amqp.Publishing{Body: message})
+
+	if err != nil {
+		return err
+	}
+
+	var confirmation amqp.Confirmation
+
+	select {
+	case confirmation = <-a.notifyChan:
+	case <-time.After(time.Millisecond * RabbitMqPublishTimeoutMs):
+		return errors.New("publishing error: timeout")
+	}
+
+	if confirmation.Ack {
+		return
+	} else {
+		return errors.New("publishing error: wrong confirmation")
+	}
 }
 
 func (a *RabbitMqAdapter) Publish(key string, message []byte) (err error) {
-	if err = a.checkConnection(); err != nil {
-		return
-	}
-
-	return a.channel.Publish(a.config.Exchange, key, false, false, amqp.Publishing{Body: message})
+	return a.PublishExchange(a.config.Exchange, key, message)
 }
