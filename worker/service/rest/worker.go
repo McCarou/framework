@@ -88,12 +88,18 @@ func (w *RestServiceWorker) SetRoute(method string, path string, handler RestSer
 	w.routes.Handle(strings.ToUpper(method), path, func(c *gin.Context) {
 		handler.SetGinContext(c)
 
-		handler.Handle() // TODO: implement error handling
+		err := handler.Handle()
+
+		if err != nil {
+			w.Logger.Errorf("Method %s with a path %s has been completed with an error: %v", method, path, err)
+
+			// TODO: rewrite status if it is still ok
+		}
 	})
 }
 
 func (w *RestServiceWorker) Setup() {
-	w.Logger.Infof("Setting up REST Service")
+	w.Logger.Info("Setting up REST Service")
 
 	prometheus.MustRegister(w.metricRequestCount) // TODO: refactor to Register
 
@@ -104,7 +110,7 @@ func (w *RestServiceWorker) Setup() {
 }
 
 func (w *RestServiceWorker) Run() {
-	w.Logger.Infof("Running REST Service")
+	w.Logger.Info("Running REST Service")
 
 	if err := w.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		w.Logger.Fatalf("listen %s\n", err)
@@ -112,7 +118,7 @@ func (w *RestServiceWorker) Run() {
 }
 
 func (w *RestServiceWorker) Stop() {
-	w.Logger.Infof("stop signal received! Graceful shutting down")
+	w.Logger.Info("stop signal received! Graceful shutting down")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

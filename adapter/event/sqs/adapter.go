@@ -74,7 +74,7 @@ func (a *AwsSqsAdapter) ListQueues() (*[]*string, error) {
 	return &result.QueueUrls, nil
 }
 
-func (a *AwsSqsAdapter) getQueueUrl(qName string) (string, error) {
+func (a *AwsSqsAdapter) GetQueueUrl(qName string) (string, error) {
 	getQueueUrlInput := &sqs.GetQueueUrlInput{QueueName: aws.String(qName)}
 	result, err := a.client.GetQueueUrl(getQueueUrlInput)
 	if err != nil {
@@ -85,7 +85,7 @@ func (a *AwsSqsAdapter) getQueueUrl(qName string) (string, error) {
 }
 
 func (a *AwsSqsAdapter) DeleteQueue(qName string) (err error) {
-	queueUrl, err := a.getQueueUrl(qName)
+	queueUrl, err := a.GetQueueUrl(qName)
 	if err != nil {
 		return
 	}
@@ -96,8 +96,8 @@ func (a *AwsSqsAdapter) DeleteQueue(qName string) (err error) {
 	return
 }
 
-func (a *AwsSqsAdapter) DeleteMessage(qName, receiptHandle string) (err error) {
-	queueUrl, err := a.getQueueUrl(qName)
+func (a *AwsSqsAdapter) DeleteMessage(qName string, receiptHandle string) (err error) {
+	queueUrl, err := a.GetQueueUrl(qName)
 	if err != nil {
 		return
 	}
@@ -116,8 +116,8 @@ func (a *AwsSqsAdapter) Publish(message string) (err error) {
 	return a.PublishQueue(a.config.Queue, message)
 }
 
-func (a *AwsSqsAdapter) PublishQueue(qName, message string) (err error) {
-	queueUrl, err := a.getQueueUrl(qName)
+func (a *AwsSqsAdapter) PublishQueue(qName string, message string) (err error) {
+	queueUrl, err := a.GetQueueUrl(qName)
 
 	if err != nil {
 		return
@@ -127,6 +127,14 @@ func (a *AwsSqsAdapter) PublishQueue(qName, message string) (err error) {
 	_, err = a.client.SendMessage(sendMessageInput)
 
 	return
+}
+
+func (a *AwsSqsAdapter) PublishQueueRaw(input *sqs.SendMessageInput) (*sqs.SendMessageOutput, error) {
+	return a.client.SendMessage(input)
+}
+
+func (a *AwsSqsAdapter) PublishQueueBatchRaw(input *sqs.SendMessageBatchInput) (*sqs.SendMessageBatchOutput, error) {
+	return a.client.SendMessageBatch(input)
 }
 
 func (a *AwsSqsAdapter) Consume(queueUrl string) ([]*sqs.Message, error) {
