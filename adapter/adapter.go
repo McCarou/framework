@@ -26,8 +26,12 @@ func NewBaseAdapter(name string) *BaseAdapter {
 		name = "default"
 	}
 
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.JSONFormatter{})
+
 	return &BaseAdapter{
-		name: name,
+		name:   name,
+		Logger: logger.WithField("adapter", name),
 	}
 }
 
