@@ -7,7 +7,7 @@ import "github.com/sirupsen/logrus"
 // functions from AdapterInterface.
 type BaseAdapter struct {
 	name   string
-	logger *logrus.Entry
+	Logger *logrus.Entry
 }
 
 // Interface implements basic adapter functions. All new adapters
@@ -38,5 +38,5 @@ func (a *BaseAdapter) GetName() string {
 
 // Function sets the logger for internal using in the adapter.
 func (a *BaseAdapter) SetLogger(logger *logrus.Entry) {
-	a.logger = logger
+	a.Logger = logger
 }

@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/radianteam/framework/adapter"
-	"github.com/sirupsen/logrus"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -48,7 +47,7 @@ func (a *AwsS3Adapter) Setup() (err error) {
 	a.awsSession, err = session.NewSession(conf)
 
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return
 	}
 
@@ -66,7 +65,7 @@ func (a *AwsS3Adapter) BucketList() (response []string, err error) {
 	result, err := a.s3Client.ListBuckets(nil)
 
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return
 	}
 
@@ -83,7 +82,7 @@ func (a *AwsS3Adapter) BucketCreate(name string, wait bool) (err error) {
 	})
 
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return
 	}
 
@@ -93,7 +92,7 @@ func (a *AwsS3Adapter) BucketCreate(name string, wait bool) (err error) {
 		})
 
 		if err != nil {
-			logrus.WithField("adapter", a.GetName()).Error(err)
+			a.Logger.Error(err)
 			return
 		}
 	}
@@ -105,7 +104,7 @@ func (a *AwsS3Adapter) BucketItemList(name string, prefix string) ([]*s3.Object,
 	resp, err := a.s3Client.ListObjectsV2(&s3.ListObjectsV2Input{Bucket: aws.String(name), Prefix: aws.String(prefix)})
 
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return nil, err
 
 	}
@@ -123,7 +122,7 @@ func (a *AwsS3Adapter) BucketItemUpload(bucket string, key string, body io.Reade
 	})
 
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return
 	}
 
@@ -140,7 +139,7 @@ func (a *AwsS3Adapter) BucketItemDownload(bucket string, key string, body io.Wri
 		})
 
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return
 	}
 
@@ -162,7 +161,7 @@ func (a *AwsS3Adapter) BucketItemDownloadFile(bucket string, key string, path st
 	file, err := os.Create(path)
 
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return
 	}
 
@@ -179,7 +178,7 @@ func (a *AwsS3Adapter) BucketItemDelete(name string, key string, wait bool) (err
 	_, err = a.s3Client.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(name), Key: aws.String(key)})
 
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return
 	}
 
@@ -190,7 +189,7 @@ func (a *AwsS3Adapter) BucketItemDelete(name string, key string, wait bool) (err
 		})
 
 		if err != nil {
-			logrus.WithField("adapter", a.GetName()).Error(err)
+			a.Logger.Error(err)
 			return
 		}
 	}
@@ -206,7 +205,7 @@ func (a *AwsS3Adapter) BucketClear(name string) (err error) {
 	err = s3manager.NewBatchDeleteWithClient(a.s3Client).Delete(aws.BackgroundContext(), iter)
 
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return
 	}
 
@@ -219,7 +218,7 @@ func (a *AwsS3Adapter) BucketDelete(name string, wait bool) (err error) {
 	})
 
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return
 	}
 
@@ -229,7 +228,7 @@ func (a *AwsS3Adapter) BucketDelete(name string, wait bool) (err error) {
 		})
 
 		if err != nil {
-			logrus.WithField("adapter", a.GetName()).Error(err)
+			a.Logger.Error(err)
 			return
 		}
 	}

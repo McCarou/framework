@@ -14,7 +14,6 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/radianteam/framework/adapter"
-	"github.com/sirupsen/logrus"
 )
 
 type OidcConfig struct {
@@ -48,7 +47,7 @@ func (a *OidcAdapter) Setup() (err error) {
 		a.provider, err = oidc.NewProvider(context.TODO(), a.config.ProviderUrl)
 
 		if err != nil {
-			logrus.WithField("adapter", a.GetName()).Errorf("cannot craete new provider - %s", err)
+			a.Logger.Errorf("cannot craete new provider - %s", err)
 		}
 	}
 
@@ -57,14 +56,14 @@ func (a *OidcAdapter) Setup() (err error) {
 			block, _ := pem.Decode([]byte(pubPEM))
 
 			if block == nil {
-				logrus.WithField("adapter", a.GetName()).Errorf("failed to parse PEM block containing the public key")
+				a.Logger.Errorf("failed to parse PEM block containing the public key")
 				continue
 			}
 
 			pub, err := x509.ParseCertificate(block.Bytes)
 
 			if err != nil {
-				logrus.WithField("adapter", a.GetName()).Errorf("failed to parse DER encoded public key: %s", err)
+				a.Logger.Errorf("failed to parse DER encoded public key: %s", err)
 				continue
 			}
 
@@ -87,7 +86,7 @@ func (a *OidcAdapter) GetVerifier() *oidc.IDTokenVerifier {
 		return a.provider.Verifier(&oidc.Config{ClientID: a.config.ClientId, SkipIssuerCheck: a.config.SkipIssuerCheck})
 	}
 
-	logrus.WithField("adapter", a.GetName()).Errorf("cannot get verifier - provider empty")
+	a.Logger.Errorf("cannot get verifier - provider empty")
 	return nil
 }
 
@@ -100,7 +99,7 @@ func (a *OidcAdapter) Introspect(token string) (err error) {
 	} else if a.provider != nil {
 		tokenURL = a.provider.Endpoint().TokenURL
 	} else {
-		logrus.WithField("adapter", a.GetName()).Errorf("cannot introspect token - empty provider or offline mode disable")
+		a.Logger.Errorf("cannot introspect token - empty provider or offline mode disable")
 		return errors.New("empty provider or offline mode disable")
 	}
 
@@ -113,7 +112,7 @@ func (a *OidcAdapter) Introspect(token string) (err error) {
 	res, err := client.PostForm(tokenURL+"/introspect", requestData)
 
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Errorf("cannot introspect token - %s", err)
+		a.Logger.Errorf("cannot introspect token - %s", err)
 		return
 	}
 
@@ -121,14 +120,14 @@ func (a *OidcAdapter) Introspect(token string) (err error) {
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
-		logrus.WithField("adapter", a.GetName()).Errorf("cannot introspect token - %s", res.Status)
+		a.Logger.Errorf("cannot introspect token - %s", res.Status)
 		return errors.New(res.Status)
 	}
 
 	buf, err := io.ReadAll(res.Body)
 
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Errorf("cannot read response body - %s", err)
+		a.Logger.Errorf("cannot read response body - %s", err)
 		return
 	}
 
@@ -136,7 +135,7 @@ func (a *OidcAdapter) Introspect(token string) (err error) {
 	err = json.Unmarshal(buf, &tokenInfo)
 
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Errorf("cannot unmarshal raw token data - %s", err)
+		a.Logger.Errorf("cannot unmarshal raw token data - %s", err)
 		return
 	}
 
@@ -182,7 +181,7 @@ func (a *OidcAdapter) TokenInfo(token string) (tokenInfo *oidc.IDToken, err erro
 
 	if verifier == nil {
 		err = errors.New("verifier is empty")
-		logrus.WithField("adapter", a.GetName()).Errorf("cannot get token info - %s", err)
+		a.Logger.Errorf("cannot get token info - %s", err)
 
 		return
 	}
@@ -190,7 +189,7 @@ func (a *OidcAdapter) TokenInfo(token string) (tokenInfo *oidc.IDToken, err erro
 	tokenInfo, err = verifier.Verify(context.TODO(), token)
 
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Errorf("cannot get token info - %s", err)
+		a.Logger.Errorf("cannot get token info - %s", err)
 	}
 
 	return

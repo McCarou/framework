@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/radianteam/framework/adapter"
-	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
 
@@ -41,13 +40,13 @@ func NewRabbitMqAdapter(name string, config *RabbitMqConfig) *RabbitMqAdapter {
 func (a *RabbitMqAdapter) setupChannel() (err error) {
 	a.channel, err = a.connection.Channel()
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return
 	}
 
 	a.channel.Confirm(false)
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return
 	}
 
@@ -75,7 +74,7 @@ func (a *RabbitMqAdapter) Setup() (err error) {
 
 	a.connection, err = amqp.Dial(connStr)
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return
 	}
 
@@ -84,7 +83,7 @@ func (a *RabbitMqAdapter) Setup() (err error) {
 
 func (a *RabbitMqAdapter) Close() (err error) {
 	if err = a.channel.Close(); err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return
 	}
 
@@ -99,9 +98,9 @@ func (a *RabbitMqAdapter) checkConnection() (err error) {
 	select {
 	case x, ok := <-a.notifyCloseChan:
 		if ok {
-			logrus.WithField("adapter", a.GetName()).Debug("AMQP channel closed with error: %v", x)
+			a.Logger.Debug("AMQP channel closed with error: %v", x)
 		} else {
-			logrus.WithField("adapter", a.GetName()).Debug("AMQP channel closed!")
+			a.Logger.Debug("AMQP channel closed!")
 		}
 
 		return a.setupChannel()

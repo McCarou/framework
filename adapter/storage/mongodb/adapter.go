@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/radianteam/framework/adapter"
-	"github.com/sirupsen/logrus"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -68,7 +67,7 @@ func (a *MongoDbAdapter) Setup() (err error) {
 	a.client, err = mongo.Connect(context.TODO(), mongoOpt)
 
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 	}
 
 	return

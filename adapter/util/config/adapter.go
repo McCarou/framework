@@ -13,7 +13,6 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/radianteam/framework/adapter"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/maps"
 )
 
@@ -45,14 +44,14 @@ func (a *ConfigAdapter) LoadFromFileJson(filePath string) error {
 
 	data, err := os.ReadFile(filePath)
 	if err != nil {
-		logrus.Warningf("Cannot read file %s - %s", filePath, err)
+		a.Logger.Warningf("Cannot read file %s - %s", filePath, err)
 		return err
 	}
 
 	err = json.Unmarshal(data, &cnf)
 
 	if err != nil {
-		logrus.Errorf("Cannot apply config from file %s - %s", filePath, err)
+		a.Logger.Errorf("Cannot apply config from file %s - %s", filePath, err)
 	}
 
 	a.config = cnf // TODO: remove and make union with previous configuration
@@ -245,7 +244,7 @@ func (a *ConfigAdapter) unmarshalFromMap(source map[string]any, destination inte
 		fieldTagString, ok := typeOfDest.Field(i).Tag.Lookup(TagConfigName)
 
 		if !ok || fieldTagString == "" {
-			logrus.Debugf("Field '%s' has no tag = '%s'. Skip", typeOfDest.Field(i).Name, TagConfigName)
+			a.Logger.Debugf("Field '%s' has no tag = '%s'. Skip", typeOfDest.Field(i).Name, TagConfigName)
 			continue
 		}
 
@@ -254,7 +253,7 @@ func (a *ConfigAdapter) unmarshalFromMap(source map[string]any, destination inte
 		sourceValue, ok := source[fieldTags[0]]
 
 		if !ok {
-			logrus.Debugf("Field '%s' is not in config. Skip", fieldTags[0])
+			a.Logger.Debugf("Field '%s' is not in config. Skip", fieldTags[0])
 
 			if !skipRequired && slices.Contains(fieldTags, TagConfigRequiredName) {
 				return fmt.Errorf("field '%s' is required", typeOfDest.Field(i).Name)

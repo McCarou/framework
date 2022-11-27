@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 
 	"github.com/radianteam/framework/adapter"
-	"github.com/sirupsen/logrus"
 
 	"github.com/arangodb/go-driver"
 	"github.com/arangodb/go-driver/http"
@@ -40,27 +39,27 @@ func (a *ArangoDbAdapter) Setup() (err error) {
 
 	conn, err := http.NewConnection(connConfig)
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return
 	}
 
 	client, err := driver.NewClient(driver.ClientConfig{Connection: conn, Authentication: driver.BasicAuthentication(a.config.Username, a.config.Password)})
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 		return
 	}
 
 	if ok, _ := client.DatabaseExists(context.TODO(), a.config.Database); !ok {
 		a.database, err = client.CreateDatabase(context.TODO(), a.config.Database, nil)
 		if err != nil {
-			logrus.WithField("adapter", a.GetName()).Error(err)
+			a.Logger.Error(err)
 			return
 		}
 	}
 
 	a.database, err = client.Database(context.TODO(), a.config.Database)
 	if err != nil {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 	}
 	return
 }
