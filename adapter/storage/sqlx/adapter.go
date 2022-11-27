@@ -5,7 +5,6 @@ import (
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/radianteam/framework/adapter"
-	"github.com/sirupsen/logrus"
 )
 
 type SqlxConfig struct {
@@ -32,7 +31,7 @@ func (a *SqlxAdapter) Setup() (err error) {
 		a.db.SetMaxIdleConns(0)
 		a.db.SetMaxOpenConns(1)
 	} else {
-		logrus.WithField("adapter", a.GetName()).Error(err)
+		a.Logger.Error(err)
 	}
 
 	return

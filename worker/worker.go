@@ -74,6 +74,8 @@ func (w *BaseWorker) SetMicroserviceName(name string) {
 // If the adapter with the same name is already registred the
 // first one will be overwritten by the new one.
 func (w *BaseWorker) SetAdapter(adap adapter.AdapterInterface) {
+	adap.SetLogger(w.Logger.WithField("adapter", adap.GetName()))
+
 	w.Adapters.SetAdapter(adap)
 }
 
