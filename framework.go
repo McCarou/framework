@@ -1,8 +1,6 @@
 package framework
 
 // TODO: healthchecks
-// TODO: worker rabbitmq reconnect
-// TODO: adapter email
 // TODO: tests
 // TODO: make permanent workers
 // TODO: remove fatal behaviour and return error everywhere
