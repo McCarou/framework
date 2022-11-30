@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option go_package = "framework/example/grpc/main";
+
+package main;
+
+service FibonacciPrinter {
+  rpc GetFibonacci(Number) returns (stream Number) {}
+}
+
+message Number {
+  int32 number = 1;
+}
+

@@ -1,0 +1,10 @@
+version: "3.3"
+services:
+  app:
+    build:
+      context: ./../../
+      dockerfile: example/grpc/Dockerfile
+      target: app
+    restart: always
+    ports:
+      - 3009:3009
